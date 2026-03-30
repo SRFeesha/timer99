@@ -55,7 +55,6 @@ import com.timer99.app.R
 import com.timer99.app.data.Preset
 import com.timer99.app.model.TimerState
 import com.timer99.app.model.formatMillis
-import com.timer99.app.ui.theme.CountdownViolet
 import com.timer99.app.ui.theme.Timer99Theme
 import kotlinx.coroutines.flow.filter
 
@@ -69,6 +68,8 @@ fun MainScreen(
     presets: List<Preset>,
     onStart: () -> Unit,
     onPause: () -> Unit,
+    onAddMinute: () -> Unit,
+    onSubtractMinute: () -> Unit,
     onReset: () -> Unit,
     onSetDuration: (Long) -> Unit,
     onLoadPreset: (Preset) -> Unit,
@@ -77,120 +78,114 @@ fun MainScreen(
     onPickAlarmSound: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Picker is visible only when idle (not started yet).
     val showPicker = !state.isRunning && !state.isFinished &&
             state.remainingMillis == state.totalMillis
 
     var showSaveDialog by remember { mutableStateOf(false) }
 
+    if (showPicker) {
+        PickerLayout(
+            state = state,
+            presets = presets,
+            onStart = onStart,
+            onSetDuration = onSetDuration,
+            onLoadPreset = onLoadPreset,
+            onDeletePreset = onDeletePreset,
+            onPickAlarmSound = onPickAlarmSound,
+            onShowSaveDialog = { showSaveDialog = true },
+            modifier = modifier,
+        )
+    } else {
+        RunningLayout(
+            state = state,
+            presets = presets,
+            onStart = onStart,
+            onPause = onPause,
+            onAddMinute = onAddMinute,
+            onSubtractMinute = onSubtractMinute,
+            onDeletePreset = onDeletePreset,
+            modifier = modifier,
+        )
+    }
+
+    if (showSaveDialog) {
+        SavePresetDialog(
+            durationSeconds = (state.totalMillis / 1000L).toInt(),
+            onConfirm = { name ->
+                onSavePreset(name, (state.totalMillis / 1000L).toInt())
+                showSaveDialog = false
+            },
+            onDismiss = { showSaveDialog = false },
+        )
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Picker layout (idle state — scrollable)
+// ---------------------------------------------------------------------------
+
+@Composable
+private fun PickerLayout(
+    state: TimerState,
+    presets: List<Preset>,
+    onStart: () -> Unit,
+    onSetDuration: (Long) -> Unit,
+    onLoadPreset: (Preset) -> Unit,
+    onDeletePreset: (Preset) -> Unit,
+    onPickAlarmSound: () -> Unit,
+    onShowSaveDialog: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Padded centre section — picker or running timer.
         Column(
             modifier = Modifier.padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(Modifier.height(48.dp))
-
-            if (showPicker) {
-                Text(
-                    text = stringResource(R.string.set_duration),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(24.dp))
-                DurationPicker(
-                    totalMillis = state.totalMillis,
-                    onDurationChanged = onSetDuration,
-                )
-                Spacer(Modifier.height(32.dp))
-                Button(
-                    onClick = onStart,
-                    enabled = state.totalMillis > 0,
-                    modifier = Modifier.fillMaxWidth(0.55f),
-                ) {
-                    Text(stringResource(R.string.start), fontSize = 18.sp)
-                }
-                Spacer(Modifier.height(12.dp))
-                OutlinedButton(
-                    onClick = { showSaveDialog = true },
-                    enabled = state.totalMillis > 0,
-                    modifier = Modifier.fillMaxWidth(0.55f),
-                ) {
-                    Text(stringResource(R.string.save_as_preset), fontSize = 15.sp)
-                }
-            } else {
-                Text(
-                    text = formatMillis(state.remainingMillis),
-                    fontSize = 56.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontFamily = FontFamily.Monospace,
-                    color = CountdownViolet,
-                )
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = when {
-                        state.isFinished -> stringResource(R.string.status_done)
-                        state.isRunning  -> stringResource(R.string.status_running)
-                        else             -> stringResource(R.string.status_paused)
-                    },
-                    fontSize = 16.sp,
-                )
-                Spacer(Modifier.height(40.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-                ) {
-                    if (state.isRunning) {
-                        Button(onClick = onPause) { Text(stringResource(R.string.pause)) }
-                    } else {
-                        Button(
-                            onClick = onStart,
-                            enabled = state.remainingMillis > 0 && !state.isFinished,
-                        ) {
-                            Text(stringResource(R.string.start))
-                        }
-                    }
-                    OutlinedButton(onClick = onReset) { Text(stringResource(R.string.reset)) }
-                }
+            Text(
+                text = stringResource(R.string.set_duration),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.height(24.dp))
+            DurationPicker(
+                totalMillis = state.totalMillis,
+                onDurationChanged = onSetDuration,
+            )
+            Spacer(Modifier.height(32.dp))
+            Button(
+                onClick = onStart,
+                enabled = state.totalMillis > 0,
+                modifier = Modifier.fillMaxWidth(0.55f),
+            ) {
+                Text(stringResource(R.string.start), fontSize = 18.sp)
+            }
+            Spacer(Modifier.height(12.dp))
+            OutlinedButton(
+                onClick = onShowSaveDialog,
+                enabled = state.totalMillis > 0,
+                modifier = Modifier.fillMaxWidth(0.55f),
+            ) {
+                Text(stringResource(R.string.save_as_preset), fontSize = 15.sp)
             }
         }
 
-        // Presets — full-width so cards bleed to screen edges.
         if (presets.isNotEmpty()) {
             Spacer(Modifier.height(40.dp))
-            Text(
-                text = stringResource(R.string.presets_title).uppercase(),
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                letterSpacing = 2.sp,
-                color = Color.White,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
+            PresetsStrip(
+                presets = presets,
+                enabled = true,
+                onLoadPreset = onLoadPreset,
+                onDeletePreset = onDeletePreset,
             )
-            Spacer(Modifier.height(16.dp))
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                items(presets, key = { it.id }) { preset ->
-                    PresetCard(
-                        preset = preset,
-                        enabled = showPicker,
-                        onClick = { onLoadPreset(preset) },
-                        onLongClick = { onDeletePreset(preset) },
-                    )
-                }
-            }
         }
 
-        // Alarm sound row.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -209,51 +204,148 @@ fun MainScreen(
             }
         }
     }
+}
 
-    if (showSaveDialog) {
-        SavePresetDialog(
-            durationSeconds = (state.totalMillis / 1000L).toInt(),
-            onConfirm = { name ->
-                onSavePreset(name, (state.totalMillis / 1000L).toInt())
-                showSaveDialog = false
-            },
-            onDismiss = { showSaveDialog = false },
+// ---------------------------------------------------------------------------
+// Running / paused layout (non-scrollable so weight() works)
+// ---------------------------------------------------------------------------
+
+@Composable
+private fun RunningLayout(
+    state: TimerState,
+    presets: List<Preset>,
+    onStart: () -> Unit,
+    onPause: () -> Unit,
+    onAddMinute: () -> Unit,
+    onSubtractMinute: () -> Unit,
+    onDeletePreset: (Preset) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        // Presets strip at the top when they exist.
+        if (presets.isNotEmpty()) {
+            Spacer(Modifier.height(20.dp))
+            PresetsStrip(
+                presets = presets,
+                enabled = false,
+                onLoadPreset = {},
+                onDeletePreset = onDeletePreset,
+            )
+        }
+
+        // Push everything below to the bottom.
+        Spacer(Modifier.weight(1f))
+
+        // Huge countdown.
+        Text(
+            text = formatMillis(state.remainingMillis),
+            fontSize = 92.sp,
+            fontWeight = FontWeight.Black,
+            fontFamily = FontFamily.Default,
+            color = Color.White,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
         )
+
+        Spacer(Modifier.height(48.dp))
+
+        // Control row: −1m | Pause/Resume | +1m
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            OutlinedButton(
+                onClick = onSubtractMinute,
+                enabled = state.isRunning,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(52.dp),
+                shape = RoundedCornerShape(50),
+            ) {
+                Text("−1m", fontSize = 15.sp)
+            }
+
+            Button(
+                onClick = if (state.isRunning) onPause else onStart,
+                enabled = !state.isFinished,
+                modifier = Modifier
+                    .weight(1.6f)
+                    .height(52.dp),
+                shape = RoundedCornerShape(50),
+            ) {
+                Text(
+                    text = if (state.isRunning) stringResource(R.string.pause)
+                           else stringResource(R.string.resume),
+                    fontSize = 15.sp,
+                )
+            }
+
+            OutlinedButton(
+                onClick = onAddMinute,
+                enabled = state.isRunning,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(52.dp),
+                shape = RoundedCornerShape(50),
+            ) {
+                Text("+1m", fontSize = 15.sp)
+            }
+        }
+
+        Spacer(Modifier.height(56.dp))
     }
 }
 
+// ---------------------------------------------------------------------------
+// Shared presets strip
+// ---------------------------------------------------------------------------
+
 @Composable
-private fun SavePresetDialog(
-    durationSeconds: Int,
-    onConfirm: (name: String) -> Unit,
-    onDismiss: () -> Unit,
+private fun PresetsStrip(
+    presets: List<Preset>,
+    enabled: Boolean,
+    onLoadPreset: (Preset) -> Unit,
+    onDeletePreset: (Preset) -> Unit,
 ) {
-    var name by remember { mutableStateOf("") }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.save_as_preset)) },
-        text = {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text(stringResource(R.string.preset_name_label)) },
-                placeholder = { Text(formatPresetDuration(durationSeconds)) },
-                singleLine = true,
-            )
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { if (name.isNotBlank()) onConfirm(name.trim()) },
-                enabled = name.isNotBlank(),
-            ) {
-                Text(stringResource(R.string.save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
-        },
+    Text(
+        text = stringResource(R.string.presets_title).uppercase(),
+        fontSize = 13.sp,
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = 2.sp,
+        color = Color.White,
+        textAlign = TextAlign.Center,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp),
     )
+    Spacer(Modifier.height(12.dp))
+    LazyRow(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = 24.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        items(presets, key = { it.id }) { preset ->
+            PresetCard(
+                preset = preset,
+                enabled = enabled,
+                onClick = { onLoadPreset(preset) },
+                onLongClick = { onDeletePreset(preset) },
+            )
+        }
+    }
 }
+
+// ---------------------------------------------------------------------------
+// Preset card
+// ---------------------------------------------------------------------------
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -296,11 +388,52 @@ private fun PresetCard(
     }
 }
 
+// ---------------------------------------------------------------------------
+// Save preset dialog
+// ---------------------------------------------------------------------------
+
+@Composable
+private fun SavePresetDialog(
+    durationSeconds: Int,
+    onConfirm: (name: String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var name by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.save_as_preset)) },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text(stringResource(R.string.preset_name_label)) },
+                placeholder = { Text(formatPresetDuration(durationSeconds)) },
+                singleLine = true,
+            )
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { if (name.isNotBlank()) onConfirm(name.trim()) },
+                enabled = name.isNotBlank(),
+            ) {
+                Text(stringResource(R.string.save))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
+}
+
 private fun formatPresetDuration(seconds: Int): String {
     val m = seconds / 60
     val s = seconds % 60
     return "%d:%02d".format(m, s)
 }
+
+// ---------------------------------------------------------------------------
+// Duration picker
+// ---------------------------------------------------------------------------
 
 @Composable
 private fun DurationPicker(
@@ -368,6 +501,10 @@ private fun DurationPicker(
         }
     }
 }
+
+// ---------------------------------------------------------------------------
+// Wheel number picker
+// ---------------------------------------------------------------------------
 
 @Composable
 private fun WheelNumberPicker(
@@ -467,9 +604,9 @@ private fun WheelNumberPicker(
 // Previews
 // ---------------------------------------------------------------------------
 
-@Preview(showBackground = true, name = "Idle — picker visible")
+@Preview(showBackground = true, name = "Idle — picker")
 @Composable
-private fun MainScreenIdlePreview() {
+private fun MainScreenPickerPreview() {
     Timer99Theme {
         MainScreen(
             state = TimerState.initial(300_000L),
@@ -477,9 +614,8 @@ private fun MainScreenIdlePreview() {
                 Preset(id = 1, name = "Pomodoro", durationSeconds = 1500),
                 Preset(id = 2, name = "Gym rest", durationSeconds = 90),
                 Preset(id = 3, name = "Break", durationSeconds = 900),
-                Preset(id = 4, name = "Lunch", durationSeconds = 3600),
             ),
-            onStart = {}, onPause = {}, onReset = {},
+            onStart = {}, onPause = {}, onAddMinute = {}, onSubtractMinute = {}, onReset = {},
             onSetDuration = {}, onLoadPreset = {}, onSavePreset = { _, _ -> },
             onDeletePreset = {}, onPickAlarmSound = {},
         )
@@ -491,12 +627,12 @@ private fun MainScreenIdlePreview() {
 private fun MainScreenRunningPreview() {
     Timer99Theme {
         MainScreen(
-            state = TimerState(remainingMillis = 247_000L, totalMillis = 300_000L, isRunning = true),
+            state = TimerState(remainingMillis = 97_000L, totalMillis = 300_000L, isRunning = true),
             presets = listOf(
                 Preset(id = 1, name = "Pomodoro", durationSeconds = 1500),
                 Preset(id = 2, name = "Gym rest", durationSeconds = 90),
             ),
-            onStart = {}, onPause = {}, onReset = {},
+            onStart = {}, onPause = {}, onAddMinute = {}, onSubtractMinute = {}, onReset = {},
             onSetDuration = {}, onLoadPreset = {}, onSavePreset = { _, _ -> },
             onDeletePreset = {}, onPickAlarmSound = {},
         )
@@ -510,7 +646,7 @@ private fun MainScreenPausedPreview() {
         MainScreen(
             state = TimerState(remainingMillis = 120_000L, totalMillis = 300_000L, isRunning = false),
             presets = emptyList(),
-            onStart = {}, onPause = {}, onReset = {},
+            onStart = {}, onPause = {}, onAddMinute = {}, onSubtractMinute = {}, onReset = {},
             onSetDuration = {}, onLoadPreset = {}, onSavePreset = { _, _ -> },
             onDeletePreset = {}, onPickAlarmSound = {},
         )

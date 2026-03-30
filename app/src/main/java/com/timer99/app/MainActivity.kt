@@ -112,6 +112,8 @@ class MainActivity : ComponentActivity() {
                     presets = presets,
                     onStart = { handleStartClick() },
                     onPause = { viewModel.pauseTimer() },
+                    onAddMinute = { viewModel.addMinute() },
+                    onSubtractMinute = { viewModel.subtractMinute() },
                     onReset = { viewModel.resetTimer() },
                     onSetDuration = { millis -> viewModel.setDuration(millis) },
                     onLoadPreset = { preset -> viewModel.loadPreset(preset) },

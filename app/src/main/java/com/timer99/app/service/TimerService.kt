@@ -91,8 +91,9 @@ class TimerService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
-            ACTION_STOP        -> pauseTimer()
-            ACTION_ADD_MINUTE  -> addMinute()
+            ACTION_STOP           -> pauseTimer()
+            ACTION_ADD_MINUTE     -> addMinute()
+            ACTION_SUBTRACT_MINUTE -> subtractMinute()
             ACTION_DISMISS_ALERT -> dismissAlert()
             ACTION_EXTEND_1MIN -> extendAndRestart(60_000L)
             ACTION_EXTEND_5MIN -> extendAndRestart(300_000L)
@@ -170,6 +171,15 @@ class TimerService : Service() {
         nm().cancel(ALERT_NOTIFICATION_ID)
         val total = _timerState.value.totalMillis
         _timerState.value = TimerState.initial(total)
+        pushWidgetState()
+    }
+
+    fun subtractMinute() {
+        if (!_timerState.value.isRunning) return
+        _timerState.update { st ->
+            st.copy(remainingMillis = (st.remainingMillis - 60_000L).coerceAtLeast(1_000L))
+        }
+        nm().notify(NOTIFICATION_ID, buildRunningNotification())
         pushWidgetState()
     }
 
@@ -446,8 +456,9 @@ class TimerService : Service() {
         private const val CHANNEL_ID      = "timer99_timer"
         private const val NOTIFICATION_ID = 99
 
-        const val ACTION_STOP          = "com.timer99.app.ACTION_STOP"
-        const val ACTION_ADD_MINUTE    = "com.timer99.app.ACTION_ADD_MINUTE"
+        const val ACTION_STOP             = "com.timer99.app.ACTION_STOP"
+        const val ACTION_ADD_MINUTE       = "com.timer99.app.ACTION_ADD_MINUTE"
+        const val ACTION_SUBTRACT_MINUTE  = "com.timer99.app.ACTION_SUBTRACT_MINUTE"
         const val ACTION_DISMISS_ALERT = "com.timer99.app.ACTION_DISMISS_ALERT"
         const val ACTION_EXTEND_1MIN   = "com.timer99.app.ACTION_EXTEND_1MIN"
         const val ACTION_EXTEND_5MIN   = "com.timer99.app.ACTION_EXTEND_5MIN"

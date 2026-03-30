@@ -9,7 +9,7 @@ import androidx.glance.appwidget.action.ActionCallback
 import com.timer99.app.service.TimerService
 
 /** Pauses the running timer via the foreground service. */
-class StopCallback : ActionCallback {
+class PauseCallback : ActionCallback {
     override suspend fun onAction(
         context: Context,
         glanceId: GlanceId,

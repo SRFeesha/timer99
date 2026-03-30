@@ -41,6 +41,9 @@ import com.timer99.app.data.WidgetKeys
 import com.timer99.app.data.widgetDataStore
 import com.timer99.app.model.formatMillis
 
+private fun formatWidgetTime(millis: Long): String =
+    if (millis > 60_000L) "~${(millis + 29_999L) / 60_000L}m" else formatMillis(millis)
+
 class TimerWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
@@ -85,7 +88,7 @@ private fun WidgetContent(prefs: Preferences, context: Context) {
     ) {
         // Large countdown
         Text(
-            text = formatMillis(remainingMillis),
+            text = formatWidgetTime(remainingMillis),
             style = TextStyle(
                 fontSize = 38.sp,
                 fontWeight = FontWeight.Bold,
@@ -108,30 +111,20 @@ private fun WidgetContent(prefs: Preferences, context: Context) {
 
         Spacer(GlanceModifier.height(10.dp))
 
-        // Stop / +1 min / New timer buttons
+        // Pause / +1 min / New timer buttons
         Row(
             modifier = GlanceModifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             androidx.glance.Button(
-                text = "Stop",
-                onClick = actionRunCallback<StopCallback>(),
+                text = "Pause",
+                onClick = actionRunCallback<PauseCallback>(),
             )
             Spacer(GlanceModifier.width(8.dp))
             androidx.glance.Button(
                 text = "+1 min",
                 onClick = actionRunCallback<AddMinuteCallback>(),
-            )
-            Spacer(GlanceModifier.width(8.dp))
-            androidx.glance.Button(
-                text = "New timer",
-                onClick = actionStartActivity(
-                    Intent(MainActivity.ACTION_NEW_TIMER).apply {
-                        setPackage("com.timer99.app")
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                    },
-                ),
             )
         }
     }

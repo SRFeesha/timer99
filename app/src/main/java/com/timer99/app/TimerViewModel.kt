@@ -59,6 +59,14 @@ class TimerViewModel(private val repository: PresetRepository) : ViewModel() {
         service?.pauseTimer()
     }
 
+    fun addMinute() {
+        service?.addMinute()
+    }
+
+    fun subtractMinute() {
+        service?.subtractMinute()
+    }
+
     fun resetTimer() {
         val s = service
         if (s == null) {

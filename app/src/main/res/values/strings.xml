@@ -25,6 +25,7 @@
     <string name="set_duration">Set Duration</string>
     <string name="start">Start</string>
     <string name="pause">Pause</string>
+    <string name="resume">Resume</string>
     <string name="reset">Reset</string>
     <string name="dismiss">Dismiss</string>
     <string name="save_as_preset">Save as preset</string>
