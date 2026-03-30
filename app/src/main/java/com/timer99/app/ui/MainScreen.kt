@@ -236,7 +236,7 @@ private fun RunningLayout(
     ) {
         // Presets strip at the top when they exist.
         if (presets.isNotEmpty()) {
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(80.dp))
             PresetsStrip(
                 presets = presets,
                 enabled = false,
