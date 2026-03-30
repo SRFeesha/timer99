@@ -245,13 +245,13 @@ private fun RunningLayout(
             )
         }
 
-        // Push everything below to the bottom.
+        // Center the timer+buttons cluster in the remaining space.
         Spacer(Modifier.weight(1f))
 
         // Huge countdown.
         Text(
             text = formatMillis(state.remainingMillis),
-            fontSize = 108.sp,
+            fontSize = 128.sp,
             fontWeight = FontWeight.Black,
             fontFamily = FontFamily.Default,
             color = Color.White,
@@ -261,7 +261,7 @@ private fun RunningLayout(
                 .padding(horizontal = 24.dp),
         )
 
-        Spacer(Modifier.height(40.dp))
+        Spacer(Modifier.height(36.dp))
 
         // Control row: −1m | Pause/Resume | +1m  (equal width, card-styled)
         Row(
@@ -297,7 +297,8 @@ private fun RunningLayout(
             )
         }
 
-        Spacer(Modifier.height(56.dp))
+        // Equal spacer at bottom — centers the cluster vertically.
+        Spacer(Modifier.weight(1f))
     }
 }
 
