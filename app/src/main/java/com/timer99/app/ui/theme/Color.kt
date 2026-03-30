@@ -3,6 +3,7 @@ package com.timer99.app.ui.theme
 import androidx.compose.ui.graphics.Color
 
 val TimerPrimary = Color(0xFF6366F1)
+val CountdownViolet = Color(0xFFD4BBFF)
 val TimerOnPrimary = Color(0xFFFFFFFF)
 
 // Dark-only palette

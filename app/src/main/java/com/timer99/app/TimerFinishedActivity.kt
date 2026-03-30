@@ -36,9 +36,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.timer99.app.R
+import com.timer99.app.ui.theme.Timer99Theme
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
@@ -201,6 +205,32 @@ class TimerFinishedActivity : ComponentActivity() {
     }
 }
 
+@Preview(showBackground = true, name = "Finished — with preset name")
+@Composable
+private fun FinishedScreenPreview() {
+    Timer99Theme {
+        FinishedScreen(
+            presetName = "Pomodoro",
+            onDismiss = {},
+            onExtend1Min = {},
+            onExtend5Min = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Finished — no preset")
+@Composable
+private fun FinishedScreenNoPresetPreview() {
+    Timer99Theme {
+        FinishedScreen(
+            presetName = null,
+            onDismiss = {},
+            onExtend1Min = {},
+            onExtend5Min = {},
+        )
+    }
+}
+
 @Composable
 private fun FinishedScreen(
     presetName: String?,
@@ -229,7 +259,7 @@ private fun FinishedScreen(
                 Spacer(Modifier.height(8.dp))
             }
             Text(
-                text = "Timer done!",
+                text = stringResource(R.string.timer_finished),
                 fontSize = 42.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -242,7 +272,7 @@ private fun FinishedScreen(
                     .fillMaxWidth(0.65f)
                     .height(52.dp),
             ) {
-                Text("Dismiss", fontSize = 18.sp)
+                Text(stringResource(R.string.dismiss), fontSize = 18.sp)
             }
             Spacer(Modifier.height(16.dp))
             Row(
@@ -253,13 +283,13 @@ private fun FinishedScreen(
                     onClick = onExtend1Min,
                     modifier = Modifier.weight(1f).height(48.dp),
                 ) {
-                    Text("+1 min", fontSize = 15.sp)
+                    Text(stringResource(R.string.action_add_minute), fontSize = 15.sp)
                 }
                 OutlinedButton(
                     onClick = onExtend5Min,
                     modifier = Modifier.weight(1f).height(48.dp),
                 ) {
-                    Text("+5 min", fontSize = 15.sp)
+                    Text(stringResource(R.string.action_add_five_minutes), fontSize = 15.sp)
                 }
             }
         }

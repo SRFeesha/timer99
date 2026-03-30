@@ -17,7 +17,7 @@ data class TimerState(
     }
 }
 
-const val DEFAULT_TOTAL_MILLIS = 5_000L
+const val DEFAULT_TOTAL_MILLIS = 300_000L // 5 minutes
 
 fun formatMillis(millis: Long): String {
     val totalSeconds = (millis + 999) / 1000

@@ -16,22 +16,24 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.datastore.preferences.core.edit
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.timer99.app.data.AppDatabase
-import com.timer99.app.data.PresetRepository
+import com.timer99.app.data.DefaultPresetRepository
 import com.timer99.app.data.WidgetKeys
 import com.timer99.app.data.encodePresets
 import com.timer99.app.data.widgetDataStore
 import com.timer99.app.service.TimerService
 import com.timer99.app.ui.MainScreen
 import com.timer99.app.ui.theme.Timer99Theme
-import androidx.core.net.toUri
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -87,21 +89,23 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val repository = PresetRepository(AppDatabase.getInstance(this).presetDao())
+        val repository = DefaultPresetRepository(AppDatabase.getInstance(this).presetDao())
         viewModel = ViewModelProvider(this, TimerViewModel.Factory(repository))[TimerViewModel::class.java]
 
-        // Keep the widget's preset list in sync with Room.
+        // Keep the widget's preset list in sync with Room — stops when the activity is not STARTED.
         lifecycleScope.launch {
-            viewModel.presets.collect { presets ->
-                applicationContext.widgetDataStore.edit { prefs ->
-                    prefs[WidgetKeys.PRESETS_JSON] = encodePresets(presets)
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.presets.collect { presets ->
+                    applicationContext.widgetDataStore.edit { prefs ->
+                        prefs[WidgetKeys.PRESETS_JSON] = encodePresets(presets)
+                    }
                 }
             }
         }
 
         setContent {
-            val state by viewModel.uiState.collectAsState()
-            val presets by viewModel.presets.collectAsState()
+            val state by viewModel.uiState.collectAsStateWithLifecycle()
+            val presets by viewModel.presets.collectAsStateWithLifecycle()
             Timer99Theme {
                 MainScreen(
                     state = state,

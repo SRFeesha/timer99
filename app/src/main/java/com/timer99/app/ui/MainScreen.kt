@@ -49,13 +49,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.timer99.app.R
 import com.timer99.app.data.Preset
 import com.timer99.app.model.TimerState
 import com.timer99.app.model.formatMillis
+import com.timer99.app.ui.theme.CountdownViolet
+import com.timer99.app.ui.theme.Timer99Theme
 import kotlinx.coroutines.flow.filter
 
 @Composable
@@ -88,7 +93,7 @@ fun MainScreen(
 
         if (showPicker) {
             Text(
-                text = "Set Duration",
+                text = stringResource(R.string.set_duration),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -103,7 +108,7 @@ fun MainScreen(
                 enabled = state.totalMillis > 0,
                 modifier = Modifier.fillMaxWidth(0.55f),
             ) {
-                Text("Start", fontSize = 18.sp)
+                Text(stringResource(R.string.start), fontSize = 18.sp)
             }
             Spacer(Modifier.height(12.dp))
             OutlinedButton(
@@ -111,7 +116,7 @@ fun MainScreen(
                 enabled = state.totalMillis > 0,
                 modifier = Modifier.fillMaxWidth(0.55f),
             ) {
-                Text("Save as preset", fontSize = 15.sp)
+                Text(stringResource(R.string.save_as_preset), fontSize = 15.sp)
             }
         } else {
             Text(
@@ -119,14 +124,14 @@ fun MainScreen(
                 fontSize = 56.sp,
                 fontWeight = FontWeight.ExtraBold,
                 fontFamily = FontFamily.Monospace,
-                color = Color(0xFFD4BBFF),
+                color = CountdownViolet,
             )
             Spacer(Modifier.height(8.dp))
             Text(
                 text = when {
-                    state.isFinished -> "Done"
-                    state.isRunning -> "Running"
-                    else -> "Paused"
+                    state.isFinished -> stringResource(R.string.status_done)
+                    state.isRunning  -> stringResource(R.string.status_running)
+                    else             -> stringResource(R.string.status_paused)
                 },
                 fontSize = 16.sp,
             )
@@ -136,16 +141,16 @@ fun MainScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
             ) {
                 if (state.isRunning) {
-                    Button(onClick = onPause) { Text("Pause") }
+                    Button(onClick = onPause) { Text(stringResource(R.string.pause)) }
                 } else {
                     Button(
                         onClick = onStart,
                         enabled = state.remainingMillis > 0 && !state.isFinished,
                     ) {
-                        Text("Start")
+                        Text(stringResource(R.string.start))
                     }
                 }
-                OutlinedButton(onClick = onReset) { Text("Reset") }
+                OutlinedButton(onClick = onReset) { Text(stringResource(R.string.reset)) }
             }
         }
 
@@ -156,7 +161,7 @@ fun MainScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Presets",
+                    text = stringResource(R.string.presets_title),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -178,19 +183,18 @@ fun MainScreen(
 
         Spacer(Modifier.height(24.dp))
 
-        // Alarm sound setting — always visible at the bottom.
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                text = "Alarm sound",
+                text = stringResource(R.string.alarm_sound),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             TextButton(onClick = onPickAlarmSound) {
-                Text("Change")
+                Text(stringResource(R.string.change))
             }
         }
 
@@ -218,12 +222,12 @@ private fun SavePresetDialog(
     var name by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Save as preset") },
+        title = { Text(stringResource(R.string.save_as_preset)) },
         text = {
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Name") },
+                label = { Text(stringResource(R.string.preset_name_label)) },
                 placeholder = { Text(formatPresetDuration(durationSeconds)) },
                 singleLine = true,
             )
@@ -233,11 +237,11 @@ private fun SavePresetDialog(
                 onClick = { if (name.isNotBlank()) onConfirm(name.trim()) },
                 enabled = name.isNotBlank(),
             ) {
-                Text("Save")
+                Text(stringResource(R.string.save))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
     )
 }
@@ -277,7 +281,7 @@ private fun PresetItem(
             ) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete preset",
+                    contentDescription = stringResource(R.string.reset),
                     tint = Color.White,
                 )
             }
@@ -332,7 +336,6 @@ private fun DurationPicker(
     var minutes by remember { mutableIntStateOf(initialMinutes) }
     var seconds by remember { mutableIntStateOf(initialSeconds) }
 
-    // Sync wheels when duration is set externally (e.g. tapping a preset).
     LaunchedEffect(totalMillis) {
         val newMin = (totalMillis / 60_000L).toInt().coerceIn(0, 99)
         val newSec = ((totalMillis % 60_000L) / 1_000L).toInt().coerceIn(0, 59)
@@ -360,7 +363,7 @@ private fun DurationPicker(
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "min",
+                text = stringResource(R.string.unit_min),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -380,7 +383,7 @@ private fun DurationPicker(
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = "sec",
+                text = stringResource(R.string.unit_sec),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -402,7 +405,6 @@ private fun WheelNumberPicker(
     )
     val flingBehavior = rememberSnapFlingBehavior(listState)
 
-    // Animate wheel to the correct position when selected changes externally.
     LaunchedEffect(selected) {
         val targetIndex = (selected - range.first).coerceAtLeast(0)
         if (listState.firstVisibleItemIndex != targetIndex) {
@@ -410,7 +412,6 @@ private fun WheelNumberPicker(
         }
     }
 
-    // Report the centred item to the caller each time scrolling comes to rest.
     LaunchedEffect(listState) {
         snapshotFlow { listState.isScrollInProgress }
             .filter { !it }
@@ -418,7 +419,6 @@ private fun WheelNumberPicker(
     }
 
     Box(modifier = modifier.height(itemHeight * 3)) {
-        // Selection-highlight band behind the centre row
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -431,7 +431,6 @@ private fun WheelNumberPicker(
         LazyColumn(
             state = listState,
             flingBehavior = flingBehavior,
-            // The vertical padding keeps the first and last items centrable.
             contentPadding = PaddingValues(vertical = itemHeight),
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.fillMaxSize(),
@@ -460,7 +459,6 @@ private fun WheelNumberPicker(
             }
         }
 
-        // Gradient fade at the top
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -472,7 +470,6 @@ private fun WheelNumberPicker(
                     ),
                 ),
         )
-        // Gradient fade at the bottom
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -483,6 +480,55 @@ private fun WheelNumberPicker(
                         listOf(Color.Transparent, MaterialTheme.colorScheme.surface),
                     ),
                 ),
+        )
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Previews
+// ---------------------------------------------------------------------------
+
+@Preview(showBackground = true, name = "Idle — picker visible")
+@Composable
+private fun MainScreenIdlePreview() {
+    Timer99Theme {
+        MainScreen(
+            state = TimerState.initial(300_000L),
+            presets = listOf(
+                Preset(id = 1, name = "Pomodoro", durationSeconds = 1500),
+                Preset(id = 2, name = "Short Break", durationSeconds = 300),
+            ),
+            onStart = {}, onPause = {}, onReset = {},
+            onSetDuration = {}, onLoadPreset = {}, onSavePreset = { _, _ -> },
+            onDeletePreset = {}, onPickAlarmSound = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Running")
+@Composable
+private fun MainScreenRunningPreview() {
+    Timer99Theme {
+        MainScreen(
+            state = TimerState(remainingMillis = 247_000L, totalMillis = 300_000L, isRunning = true),
+            presets = emptyList(),
+            onStart = {}, onPause = {}, onReset = {},
+            onSetDuration = {}, onLoadPreset = {}, onSavePreset = { _, _ -> },
+            onDeletePreset = {}, onPickAlarmSound = {},
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Paused")
+@Composable
+private fun MainScreenPausedPreview() {
+    Timer99Theme {
+        MainScreen(
+            state = TimerState(remainingMillis = 120_000L, totalMillis = 300_000L, isRunning = false),
+            presets = emptyList(),
+            onStart = {}, onPause = {}, onReset = {},
+            onSetDuration = {}, onLoadPreset = {}, onSavePreset = { _, _ -> },
+            onDeletePreset = {}, onPickAlarmSound = {},
         )
     }
 }

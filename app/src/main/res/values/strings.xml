@@ -1,13 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Timer99</string>
+
+    <!-- Notification channels -->
     <string name="notification_channel_name">Timer</string>
     <string name="notification_channel_description">Shows countdown while the timer runs</string>
     <string name="notification_title">Timer99</string>
-    <string name="timer_finished">Timer done!</string>
     <string name="notification_alert_channel_name">Timer Alert</string>
     <string name="notification_alert_channel_description">Full-screen alert when the timer finishes</string>
-    <string name="dismiss">Dismiss</string>
+
+    <!-- Notification / alert actions -->
     <string name="action_stop">Stop</string>
     <string name="action_add_minute">+1 min</string>
+    <string name="action_add_five_minutes">+5 min</string>
+    <string name="action_open_app">Open app</string>
+
+    <!-- Timer status labels -->
+    <string name="timer_finished">Timer done!</string>
+    <string name="status_done">Done</string>
+    <string name="status_running">Running</string>
+    <string name="status_paused">Paused</string>
+
+    <!-- UI controls -->
+    <string name="set_duration">Set Duration</string>
+    <string name="start">Start</string>
+    <string name="pause">Pause</string>
+    <string name="reset">Reset</string>
+    <string name="dismiss">Dismiss</string>
+    <string name="save_as_preset">Save as preset</string>
+    <string name="presets_title">Presets</string>
+    <string name="alarm_sound">Alarm sound</string>
+    <string name="change">Change</string>
+    <string name="preset_name_label">Name</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Duration picker units -->
+    <string name="unit_min">min</string>
+    <string name="unit_sec">sec</string>
 </resources>
