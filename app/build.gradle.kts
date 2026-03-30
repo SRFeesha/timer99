@@ -55,6 +55,7 @@ dependencies {
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
     implementation(libs.material.icons.core)
+    implementation(libs.material.icons.extended)
     implementation(libs.coroutines.android)
     debugImplementation(libs.compose.ui.tooling)
 

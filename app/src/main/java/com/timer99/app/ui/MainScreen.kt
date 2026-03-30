@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -22,8 +23,16 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FastForward
+import androidx.compose.material.icons.filled.FastRewind
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -242,19 +251,19 @@ private fun RunningLayout(
         // Huge countdown.
         Text(
             text = formatMillis(state.remainingMillis),
-            fontSize = 92.sp,
+            fontSize = 108.sp,
             fontWeight = FontWeight.Black,
             fontFamily = FontFamily.Default,
             color = Color.White,
-            textAlign = TextAlign.Center,
+            textAlign = TextAlign.Start,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp),
         )
 
-        Spacer(Modifier.height(48.dp))
+        Spacer(Modifier.height(40.dp))
 
-        // Control row: −1m | Pause/Resume | +1m
+        // Control row: −1m | Pause/Resume | +1m  (equal width, card-styled)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -262,45 +271,68 @@ private fun RunningLayout(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            OutlinedButton(
+            TimerControlButton(
                 onClick = onSubtractMinute,
                 enabled = state.isRunning,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(52.dp),
-                shape = RoundedCornerShape(50),
-            ) {
-                Text("−1m", fontSize = 15.sp)
-            }
+                icon = Icons.Default.FastRewind,
+                label = "−1m",
+                modifier = Modifier.weight(1f),
+            )
 
-            Button(
+            TimerControlButton(
                 onClick = if (state.isRunning) onPause else onStart,
                 enabled = !state.isFinished,
-                modifier = Modifier
-                    .weight(1.6f)
-                    .height(52.dp),
-                shape = RoundedCornerShape(50),
-            ) {
-                Text(
-                    text = if (state.isRunning) stringResource(R.string.pause)
-                           else stringResource(R.string.resume),
-                    fontSize = 15.sp,
-                )
-            }
+                icon = if (state.isRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
+                label = if (state.isRunning) stringResource(R.string.pause)
+                        else stringResource(R.string.resume),
+                modifier = Modifier.weight(1f),
+            )
 
-            OutlinedButton(
+            TimerControlButton(
                 onClick = onAddMinute,
                 enabled = state.isRunning,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(52.dp),
-                shape = RoundedCornerShape(50),
-            ) {
-                Text("+1m", fontSize = 15.sp)
-            }
+                icon = Icons.Default.FastForward,
+                label = "+1m",
+                modifier = Modifier.weight(1f),
+            )
         }
 
         Spacer(Modifier.height(56.dp))
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Timer control button (dark navy + indigo border, used in the running layout)
+// ---------------------------------------------------------------------------
+
+@Composable
+private fun TimerControlButton(
+    onClick: () -> Unit,
+    enabled: Boolean,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    OutlinedButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.height(52.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = ButtonDefaults.outlinedButtonColors(
+            containerColor = PresetCardBackground,
+            contentColor = Color.White,
+            disabledContainerColor = PresetCardBackground.copy(alpha = 0.5f),
+            disabledContentColor = Color.White.copy(alpha = 0.3f),
+        ),
+        border = BorderStroke(1.dp, if (enabled) PresetCardBorder else PresetCardBorder.copy(alpha = 0.3f)),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(label, fontSize = 14.sp)
     }
 }
 
