@@ -1,19 +1,8 @@
 package com.timer99.app
 
-import android.content.Context
 import android.content.Intent
-import android.media.AudioAttributes
-import android.media.AudioManager
-import android.media.MediaPlayer
-import android.media.RingtoneManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -35,44 +24,17 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.timer99.app.R
-import com.timer99.app.ui.theme.Timer99Theme
 import androidx.core.content.ContextCompat
-import androidx.core.net.toUri
-import androidx.lifecycle.lifecycleScope
-import com.timer99.app.data.WidgetKeys
-import com.timer99.app.data.widgetDataStore
 import com.timer99.app.service.TimerService
 import com.timer99.app.ui.theme.Timer99Theme
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
 
 class TimerFinishedActivity : ComponentActivity() {
-
-    private var mediaPlayer: MediaPlayer? = null
-    private var vibrator: Vibrator? = null
-
-    private val rampHandler = Handler(Looper.getMainLooper())
-    private var startTimeMs = 0L
-
-    // Ticks every 100 ms, ramping volume via smoothstep over 60 seconds.
-    private val rampRunnable = object : Runnable {
-        override fun run() {
-            val player = mediaPlayer ?: return
-            val elapsed = System.currentTimeMillis() - startTimeMs
-            val t = (elapsed / 60_000f).coerceIn(0f, 1f)
-            // Smoothstep: ease-in-out S-curve
-            val volume = t * t * (3f - 2f * t)
-            player.setVolume(volume, volume)
-            if (t < 1f) rampHandler.postDelayed(this, RAMP_TICK_MS)
-        }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -92,18 +54,6 @@ class TimerFinishedActivity : ComponentActivity() {
 
         val presetName = intent.getStringExtra(EXTRA_PRESET_NAME)
 
-        // Start alarm sound at volume 0.0, then begin ramp immediately.
-        lifecycleScope.launch {
-            val prefs = applicationContext.widgetDataStore.data.first()
-            val uriString = prefs[WidgetKeys.ALARM_SOUND_URI] ?: ""
-            val alarmUri: Uri = if (uriString.isNotBlank()) uriString.toUri()
-            else RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-            startAlarm(alarmUri)
-        }
-
-        // Vibration starts at 3 seconds.
-        rampHandler.postDelayed({ startVibration() }, VIBRATION_DELAY_MS)
-
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() = dismiss()
         })
@@ -120,77 +70,12 @@ class TimerFinishedActivity : ComponentActivity() {
         }
     }
 
-    override fun onDestroy() {
-        rampHandler.removeCallbacksAndMessages(null)
-        stopMediaPlayer()
-        stopVibrator()
-        super.onDestroy()
-    }
-
-    // ---------------------------------------------------------------------------
-    // Alert internals
-    // ---------------------------------------------------------------------------
-
-    private fun startAlarm(uri: Uri) {
-        val attrs = AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_ALARM)
-            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-            .setLegacyStreamType(AudioManager.STREAM_ALARM)
-            .build()
-
-        fun buildPlayer(src: Uri): MediaPlayer = MediaPlayer().apply {
-            setAudioAttributes(attrs)
-            setDataSource(applicationContext, src)
-            setVolume(0f, 0f)   // start silent; ramp brings it up
-            isLooping = true
-            prepare()
-            start()
-        }
-
-        mediaPlayer = try {
-            buildPlayer(uri)
-        } catch (_: Exception) {
-            val fallback = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-            if (uri != fallback) try { buildPlayer(fallback) } catch (_: Exception) { null }
-            else null
-        }
-
-        startTimeMs = System.currentTimeMillis()
-        rampHandler.post(rampRunnable)
-    }
-
-    private fun startVibration() {
-        vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            (getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        }
-        vibrator?.vibrate(
-            VibrationEffect.createWaveform(longArrayOf(0, 500, 500), /* repeat= */ 0),
-        )
-    }
-
-    private fun stopMediaPlayer() {
-        mediaPlayer?.stop()
-        mediaPlayer?.release()
-        mediaPlayer = null
-    }
-
-    private fun stopVibrator() {
-        vibrator?.cancel()
-        vibrator = null
-    }
-
     private fun dismiss() {
         stopAlertAndSend(TimerService.ACTION_DISMISS_ALERT)
     }
 
-    /** Stop local sound/vibration, send action to service, finish. */
+    /** Tell the service to stop the alarm, then close this activity. */
     private fun stopAlertAndSend(action: String) {
-        rampHandler.removeCallbacksAndMessages(null)
-        stopMediaPlayer()
-        stopVibrator()
         ContextCompat.startForegroundService(
             this,
             Intent(this, TimerService::class.java).apply { this.action = action },
@@ -200,8 +85,6 @@ class TimerFinishedActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_PRESET_NAME = "extra_preset_name"
-        private const val RAMP_TICK_MS = 100L
-        private const val VIBRATION_DELAY_MS = 3_000L
     }
 }
 

@@ -1,5 +1,6 @@
 package com.timer99.app.widget
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
@@ -45,37 +46,40 @@ class TimerWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
             val prefs by context.widgetDataStore.data.collectAsState(initial = emptyPreferences())
-            WidgetContent(prefs)
+            WidgetContent(prefs, context)
         }
     }
 }
 
 @Composable
-private fun WidgetContent(prefs: Preferences) {
+private fun WidgetContent(prefs: Preferences, context: Context) {
     val isRunning = prefs[WidgetKeys.IS_RUNNING] ?: false
     val remainingMillis = prefs[WidgetKeys.REMAINING_MILLIS] ?: 0L
     val presetName = prefs[WidgetKeys.PRESET_NAME] ?: ""
 
+    // Explicit intent used for both states — reliable from a widget host process.
+    val openMainIntent = Intent().apply {
+        component = ComponentName(context, MainActivity::class.java)
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+    }
+
     if (!isRunning) {
-        // Idle — fully transparent, no interactive elements.
-        Box(modifier = GlanceModifier.fillMaxSize()) {}
+        // Idle — transparent, but tapping still opens the app.
+        Box(
+            modifier = GlanceModifier
+                .fillMaxSize()
+                .clickable(actionStartActivity(openMainIntent)),
+        ) {}
         return
     }
 
-    // Active — semi-transparent dark card. Tapping anywhere opens the app.
+    // Active — semi-transparent dark card. Tapping anywhere brings the app to foreground.
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
             .background(ImageProvider(R.drawable.widget_bg_active))
             .padding(horizontal = 12.dp, vertical = 10.dp)
-            .clickable(
-                actionStartActivity(
-                    Intent(MainActivity.ACTION_NEW_TIMER).apply {
-                        setPackage("com.timer99.app")
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                    },
-                ),
-            ),
+            .clickable(actionStartActivity(openMainIntent)),
         verticalAlignment = Alignment.CenterVertically,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

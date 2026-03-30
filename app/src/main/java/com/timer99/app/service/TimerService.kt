@@ -8,12 +8,20 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.media.AudioAttributes
+import android.media.AudioManager
+import android.media.MediaPlayer
+import android.media.RingtoneManager
+import android.net.Uri
 import android.os.Binder
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.core.app.NotificationCompat
+import androidx.core.net.toUri
 import androidx.datastore.preferences.core.edit
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import com.timer99.app.MainActivity
@@ -33,6 +41,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -41,8 +50,12 @@ class TimerService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var tickJob: Job? = null
+    private var alarmJob: Job? = null
 
     private val _timerState = MutableStateFlow(TimerState.initial())
+
+    private var mediaPlayer: MediaPlayer? = null
+    private var vibrator: Vibrator? = null
     val timerState: StateFlow<TimerState> = _timerState.asStateFlow()
 
     private var currentPresetName: String? = null
@@ -94,6 +107,7 @@ class TimerService : Service() {
     override fun onDestroy() {
         refreshHandler.removeCallbacks(refreshRunnable)
         tickJob?.cancel()
+        stopAlertSoundAndVibration()
         scope.cancel()
         super.onDestroy()
     }
@@ -172,13 +186,13 @@ class TimerService : Service() {
         pushWidgetState()
     }
 
-    /** Dismiss — activity already stopped sound/vibration; just remove the notification. */
     fun dismissAlert() {
+        stopAlertSoundAndVibration()
         stopForeground(STOP_FOREGROUND_REMOVE)
     }
 
-    /** +1 min / +5 min — activity already stopped sound/vibration; add time and restart. */
     fun extendAndRestart(extraMillis: Long) {
+        stopAlertSoundAndVibration()
         stopForeground(STOP_FOREGROUND_REMOVE)
         _timerState.update { st ->
             val newRemaining = st.remainingMillis + extraMillis
@@ -213,6 +227,7 @@ class TimerService : Service() {
     private fun onTimerFinished() {
         stopRefreshLoop()
         pushWidgetState()
+        startAlertSoundAndVibration()
 
         val presetName = currentPresetName
 
@@ -274,6 +289,78 @@ class TimerService : Service() {
         // Note: startActivity() removed — blocked on Android 15+ (targetSdk 35) when the
         // app has no visible activity (BAL_BLOCK). The full-screen intent handles both
         // lock-screen launch and screen-on heads-up.
+    }
+
+    private fun startAlertSoundAndVibration() {
+        alarmJob?.cancel()
+        alarmJob = scope.launch {
+            val prefs = applicationContext.widgetDataStore.data.first()
+            val uriString = prefs[WidgetKeys.ALARM_SOUND_URI] ?: ""
+            val alarmUri: Uri = if (uriString.isNotBlank()) uriString.toUri()
+                else RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+
+            val attrs = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ALARM)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .setLegacyStreamType(AudioManager.STREAM_ALARM)
+                .build()
+
+            fun buildPlayer(src: Uri): MediaPlayer = MediaPlayer().apply {
+                setAudioAttributes(attrs)
+                setDataSource(applicationContext, src)
+                setVolume(0f, 0f)
+                isLooping = true
+                prepare()
+                start()
+            }
+
+            mediaPlayer = try {
+                buildPlayer(alarmUri)
+            } catch (_: Exception) {
+                val fallback = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+                if (alarmUri != fallback) try { buildPlayer(fallback) } catch (_: Exception) { null }
+                else null
+            }
+
+            val startTimeMs = System.currentTimeMillis()
+
+            // Start vibration after a short delay, concurrently with the volume ramp.
+            launch {
+                delay(VIBRATION_DELAY_MS)
+                if (isActive) {
+                    vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        (getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
+                    } else {
+                        @Suppress("DEPRECATION")
+                        getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+                    }
+                    vibrator?.vibrate(
+                        VibrationEffect.createWaveform(longArrayOf(0, 500, 500), /* repeat= */ 0),
+                    )
+                }
+            }
+
+            // Smoothstep volume ramp over 60 seconds.
+            while (isActive) {
+                val player = mediaPlayer ?: break
+                val elapsed = System.currentTimeMillis() - startTimeMs
+                val t = (elapsed / 60_000f).coerceIn(0f, 1f)
+                val volume = t * t * (3f - 2f * t)
+                player.setVolume(volume, volume)
+                if (t >= 1f) break
+                delay(RAMP_TICK_MS)
+            }
+        }
+    }
+
+    private fun stopAlertSoundAndVibration() {
+        alarmJob?.cancel()
+        alarmJob = null
+        try { mediaPlayer?.stop() } catch (_: Exception) {}
+        mediaPlayer?.release()
+        mediaPlayer = null
+        vibrator?.cancel()
+        vibrator = null
     }
 
     private fun pushWidgetState() {
@@ -375,5 +462,7 @@ class TimerService : Service() {
         private const val REQUEST_ALERT_OPEN    = 7
 
         private const val TICK_MS = 250L
+        private const val RAMP_TICK_MS = 100L
+        private const val VIBRATION_DELAY_MS = 3_000L
     }
 }
