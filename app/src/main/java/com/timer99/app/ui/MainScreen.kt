@@ -234,19 +234,19 @@ private fun RunningLayout(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Presets strip at the top when they exist.
+        // All content pushed to the bottom for thumb reachability.
+        Spacer(Modifier.weight(1f))
+
+        // Presets strip just above the timer.
         if (presets.isNotEmpty()) {
-            Spacer(Modifier.height(80.dp))
             PresetsStrip(
                 presets = presets,
                 enabled = false,
                 onLoadPreset = {},
                 onDeletePreset = onDeletePreset,
             )
+            Spacer(Modifier.height(24.dp))
         }
-
-        // Center the timer+buttons cluster in the remaining space.
-        Spacer(Modifier.weight(1f))
 
         // Huge countdown.
         Text(
@@ -297,8 +297,7 @@ private fun RunningLayout(
             )
         }
 
-        // Equal spacer at bottom — centers the cluster vertically.
-        Spacer(Modifier.weight(1f))
+        Spacer(Modifier.height(56.dp))
     }
 }
 
