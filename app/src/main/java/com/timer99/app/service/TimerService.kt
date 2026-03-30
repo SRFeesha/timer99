@@ -308,7 +308,7 @@ class TimerService : Service() {
             fun buildPlayer(src: Uri): MediaPlayer = MediaPlayer().apply {
                 setAudioAttributes(attrs)
                 setDataSource(applicationContext, src)
-                setVolume(0f, 0f)
+                setVolume(0.4f, 0.4f)
                 isLooping = true
                 prepare()
                 start()
@@ -345,7 +345,7 @@ class TimerService : Service() {
                 val player = mediaPlayer ?: break
                 val elapsed = System.currentTimeMillis() - startTimeMs
                 val t = (elapsed / 60_000f).coerceIn(0f, 1f)
-                val volume = t * t * (3f - 2f * t)
+                val volume = 0.4f + 0.6f * (t * t * (3f - 2f * t))
                 player.setVolume(volume, volume)
                 if (t >= 1f) break
                 delay(RAMP_TICK_MS)
