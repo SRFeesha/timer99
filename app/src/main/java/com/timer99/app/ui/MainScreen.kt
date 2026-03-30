@@ -85,75 +85,81 @@ fun MainScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
+            .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(Modifier.height(48.dp))
+        // Padded centre section — picker or running timer.
+        Column(
+            modifier = Modifier.padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(Modifier.height(48.dp))
 
-        if (showPicker) {
-            Text(
-                text = stringResource(R.string.set_duration),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(24.dp))
-            DurationPicker(
-                totalMillis = state.totalMillis,
-                onDurationChanged = onSetDuration,
-            )
-            Spacer(Modifier.height(32.dp))
-            Button(
-                onClick = onStart,
-                enabled = state.totalMillis > 0,
-                modifier = Modifier.fillMaxWidth(0.55f),
-            ) {
-                Text(stringResource(R.string.start), fontSize = 18.sp)
-            }
-            Spacer(Modifier.height(12.dp))
-            OutlinedButton(
-                onClick = { showSaveDialog = true },
-                enabled = state.totalMillis > 0,
-                modifier = Modifier.fillMaxWidth(0.55f),
-            ) {
-                Text(stringResource(R.string.save_as_preset), fontSize = 15.sp)
-            }
-        } else {
-            Text(
-                text = formatMillis(state.remainingMillis),
-                fontSize = 56.sp,
-                fontWeight = FontWeight.ExtraBold,
-                fontFamily = FontFamily.Monospace,
-                color = CountdownViolet,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = when {
-                    state.isFinished -> stringResource(R.string.status_done)
-                    state.isRunning  -> stringResource(R.string.status_running)
-                    else             -> stringResource(R.string.status_paused)
-                },
-                fontSize = 16.sp,
-            )
-            Spacer(Modifier.height(40.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-            ) {
-                if (state.isRunning) {
-                    Button(onClick = onPause) { Text(stringResource(R.string.pause)) }
-                } else {
-                    Button(
-                        onClick = onStart,
-                        enabled = state.remainingMillis > 0 && !state.isFinished,
-                    ) {
-                        Text(stringResource(R.string.start))
-                    }
+            if (showPicker) {
+                Text(
+                    text = stringResource(R.string.set_duration),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.height(24.dp))
+                DurationPicker(
+                    totalMillis = state.totalMillis,
+                    onDurationChanged = onSetDuration,
+                )
+                Spacer(Modifier.height(32.dp))
+                Button(
+                    onClick = onStart,
+                    enabled = state.totalMillis > 0,
+                    modifier = Modifier.fillMaxWidth(0.55f),
+                ) {
+                    Text(stringResource(R.string.start), fontSize = 18.sp)
                 }
-                OutlinedButton(onClick = onReset) { Text(stringResource(R.string.reset)) }
+                Spacer(Modifier.height(12.dp))
+                OutlinedButton(
+                    onClick = { showSaveDialog = true },
+                    enabled = state.totalMillis > 0,
+                    modifier = Modifier.fillMaxWidth(0.55f),
+                ) {
+                    Text(stringResource(R.string.save_as_preset), fontSize = 15.sp)
+                }
+            } else {
+                Text(
+                    text = formatMillis(state.remainingMillis),
+                    fontSize = 56.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    fontFamily = FontFamily.Monospace,
+                    color = CountdownViolet,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = when {
+                        state.isFinished -> stringResource(R.string.status_done)
+                        state.isRunning  -> stringResource(R.string.status_running)
+                        else             -> stringResource(R.string.status_paused)
+                    },
+                    fontSize = 16.sp,
+                )
+                Spacer(Modifier.height(40.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                ) {
+                    if (state.isRunning) {
+                        Button(onClick = onPause) { Text(stringResource(R.string.pause)) }
+                    } else {
+                        Button(
+                            onClick = onStart,
+                            enabled = state.remainingMillis > 0 && !state.isFinished,
+                        ) {
+                            Text(stringResource(R.string.start))
+                        }
+                    }
+                    OutlinedButton(onClick = onReset) { Text(stringResource(R.string.reset)) }
+                }
             }
         }
 
+        // Presets — full-width so cards bleed to screen edges.
         if (presets.isNotEmpty()) {
             Spacer(Modifier.height(40.dp))
             Text(
@@ -163,13 +169,13 @@ fun MainScreen(
                 letterSpacing = 2.sp,
                 color = Color.White,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
             )
             Spacer(Modifier.height(16.dp))
             LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = (-24).dp),
+                modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(horizontal = 24.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -184,10 +190,12 @@ fun MainScreen(
             }
         }
 
-        Spacer(Modifier.height(24.dp))
-
+        // Alarm sound row.
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(top = 24.dp, bottom = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
@@ -200,8 +208,6 @@ fun MainScreen(
                 Text(stringResource(R.string.change))
             }
         }
-
-        Spacer(Modifier.height(16.dp))
     }
 
     if (showSaveDialog) {
