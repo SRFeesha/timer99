@@ -1,6 +1,9 @@
 package com.timer99.app.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,32 +16,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -52,6 +46,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -62,6 +58,10 @@ import com.timer99.app.model.formatMillis
 import com.timer99.app.ui.theme.CountdownViolet
 import com.timer99.app.ui.theme.Timer99Theme
 import kotlinx.coroutines.flow.filter
+
+private val PresetCardBackground = Color(0xFF0D1150)
+private val PresetCardBorder     = Color(0xFF5558D4)
+private val PresetTimeText       = Color(0xFF8087BB)
 
 @Composable
 fun MainScreen(
@@ -156,27 +156,30 @@ fun MainScreen(
 
         if (presets.isNotEmpty()) {
             Spacer(Modifier.height(40.dp))
-            Row(
+            Text(
+                text = stringResource(R.string.presets_title).uppercase(),
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                letterSpacing = 2.sp,
+                color = Color.White,
+                textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+            )
+            Spacer(Modifier.height(16.dp))
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = (-24).dp),
+                contentPadding = PaddingValues(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Text(
-                    text = stringResource(R.string.presets_title),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Spacer(Modifier.height(12.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                presets.forEach { preset ->
-                    key(preset.id) {
-                        PresetItem(
-                            preset = preset,
-                            canLoad = showPicker,
-                            onClick = { onLoadPreset(preset) },
-                            onDelete = { onDeletePreset(preset) },
-                        )
-                    }
+                items(presets, key = { it.id }) { preset ->
+                    PresetCard(
+                        preset = preset,
+                        enabled = showPicker,
+                        onClick = { onLoadPreset(preset) },
+                        onLongClick = { onDeletePreset(preset) },
+                    )
                 }
             }
         }
@@ -246,74 +249,43 @@ private fun SavePresetDialog(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun PresetItem(
+private fun PresetCard(
     preset: Preset,
-    canLoad: Boolean,
+    enabled: Boolean,
     onClick: () -> Unit,
-    onDelete: () -> Unit,
+    onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                onDelete()
-                true
-            } else {
-                false
-            }
-        },
-        positionalThreshold = { totalDistance -> totalDistance * 0.4f },
-    )
-
-    SwipeToDismissBox(
-        state = dismissState,
-        enableDismissFromStartToEnd = false,
-        backgroundContent = {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color(0xFFDC2626))
-                    .padding(horizontal = 20.dp),
-                contentAlignment = Alignment.CenterEnd,
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = stringResource(R.string.reset),
-                    tint = Color.White,
-                )
-            }
-        },
-        modifier = modifier.fillMaxWidth(),
+    Box(
+        modifier = modifier
+            .width(155.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(PresetCardBackground)
+            .border(1.dp, PresetCardBorder, RoundedCornerShape(16.dp))
+            .combinedClickable(
+                onClick = { if (enabled) onClick() },
+                onLongClick = onLongClick,
+            )
+            .padding(horizontal = 16.dp, vertical = 16.dp),
     ) {
-        Surface(
-            onClick = onClick,
-            enabled = canLoad,
-            shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    text = preset.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = formatPresetDuration(preset.durationSeconds),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontFamily = FontFamily.Monospace,
-                )
-            }
+        Column {
+            Text(
+                text = preset.name,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = formatPresetDuration(preset.durationSeconds),
+                fontSize = 16.sp,
+                color = PresetTimeText,
+                fontFamily = FontFamily.Monospace,
+            )
         }
     }
 }
@@ -428,14 +400,15 @@ private fun WheelNumberPicker(
                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)),
         )
 
-        LazyColumn(
+        androidx.compose.foundation.lazy.LazyColumn(
             state = listState,
             flingBehavior = flingBehavior,
             contentPadding = PaddingValues(vertical = itemHeight),
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.fillMaxSize(),
         ) {
-            itemsIndexed(items) { index, item ->
+            items(items.size) { index ->
+                val item = items[index]
                 val isSelected by remember {
                     derivedStateOf { listState.firstVisibleItemIndex == index }
                 }
@@ -496,7 +469,9 @@ private fun MainScreenIdlePreview() {
             state = TimerState.initial(300_000L),
             presets = listOf(
                 Preset(id = 1, name = "Pomodoro", durationSeconds = 1500),
-                Preset(id = 2, name = "Short Break", durationSeconds = 300),
+                Preset(id = 2, name = "Gym rest", durationSeconds = 90),
+                Preset(id = 3, name = "Break", durationSeconds = 900),
+                Preset(id = 4, name = "Lunch", durationSeconds = 3600),
             ),
             onStart = {}, onPause = {}, onReset = {},
             onSetDuration = {}, onLoadPreset = {}, onSavePreset = { _, _ -> },
@@ -511,7 +486,10 @@ private fun MainScreenRunningPreview() {
     Timer99Theme {
         MainScreen(
             state = TimerState(remainingMillis = 247_000L, totalMillis = 300_000L, isRunning = true),
-            presets = emptyList(),
+            presets = listOf(
+                Preset(id = 1, name = "Pomodoro", durationSeconds = 1500),
+                Preset(id = 2, name = "Gym rest", durationSeconds = 90),
+            ),
             onStart = {}, onPause = {}, onReset = {},
             onSetDuration = {}, onLoadPreset = {}, onSavePreset = { _, _ -> },
             onDeletePreset = {}, onPickAlarmSound = {},
