@@ -88,9 +88,9 @@ private fun WidgetContent(prefs: Preferences, context: Context) {
     ) {
         // Large countdown
         Text(
-            text = formatWidgetTime(remainingMillis),
+            text = formatMillis(remainingMillis),
             style = TextStyle(
-                fontSize = 38.sp,
+                fontSize = 56.sp,
                 fontWeight = FontWeight.Bold,
                 color = ColorProvider(Color.White),
                 textAlign = TextAlign.Center,
