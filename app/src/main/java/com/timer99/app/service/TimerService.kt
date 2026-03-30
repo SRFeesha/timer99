@@ -265,21 +265,15 @@ class TimerService : Service() {
             .addAction(0, "Open app", openAppPi)
             .build()
 
-        // Keep service in foreground — required for setFullScreenIntent to fire automatically.
+        // Post via nm().notify() first — posting a brand-new notification ID is what
+        // triggers USE_FULL_SCREEN_INTENT. startForeground() alone does not fire it.
+        nm().notify(ALERT_NOTIFICATION_ID, alertNotification)
+        // Then promote to foreground so the service stays alive for dismiss/extend actions.
         startForeground(ALERT_NOTIFICATION_ID, alertNotification)
         nm().cancel(NOTIFICATION_ID)
-
-        // Directly launch the activity — reliable when screen is on and app is backgrounded.
-        startActivity(
-            Intent(this, TimerFinishedActivity::class.java).apply {
-                addFlags(
-                    Intent.FLAG_ACTIVITY_NEW_TASK or
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                    Intent.FLAG_ACTIVITY_SINGLE_TOP,
-                )
-                if (presetName != null) putExtra(TimerFinishedActivity.EXTRA_PRESET_NAME, presetName)
-            },
-        )
+        // Note: startActivity() removed — blocked on Android 15+ (targetSdk 35) when the
+        // app has no visible activity (BAL_BLOCK). The full-screen intent handles both
+        // lock-screen launch and screen-on heads-up.
     }
 
     private fun pushWidgetState() {
