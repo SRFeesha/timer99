@@ -1,5 +1,6 @@
 package com.timer99.app.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,10 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FastRewind
@@ -71,6 +69,9 @@ private val PresetCardBackground = Color(0xFF0D1150)
 private val PresetCardBorder     = Color(0xFF5558D4)
 private val PresetTimeText       = Color(0xFF8087BB)
 
+private val HPad = 24.dp   // consistent horizontal padding for every screen
+private val VPad = 48.dp   // consistent top / bottom padding for every screen
+
 @Composable
 fun MainScreen(
     state: TimerState,
@@ -87,7 +88,6 @@ fun MainScreen(
     onPickAlarmSound: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // Picker is visible only when idle (not started yet).
     val showPicker = !state.isRunning && !state.isFinished &&
             state.remainingMillis == state.totalMillis
 
@@ -131,7 +131,7 @@ fun MainScreen(
 }
 
 // ---------------------------------------------------------------------------
-// Picker layout (idle state — scrollable)
+// Picker layout — Rolodex centered, secondary actions at the bottom
 // ---------------------------------------------------------------------------
 
 @Composable
@@ -146,23 +146,15 @@ private fun PickerLayout(
     onShowSaveDialog: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
+    Box(modifier = modifier.fillMaxSize()) {
+
+        // Duration picker + Start — vertically centered
         Column(
-            modifier = Modifier.padding(horizontal = 24.dp),
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(horizontal = HPad),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Spacer(Modifier.height(48.dp))
-            Text(
-                text = stringResource(R.string.set_duration),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(24.dp))
             DurationPicker(
                 totalMillis = state.totalMillis,
                 onDurationChanged = onSetDuration,
@@ -171,52 +163,66 @@ private fun PickerLayout(
             Button(
                 onClick = onStart,
                 enabled = state.totalMillis > 0,
-                modifier = Modifier.fillMaxWidth(0.55f),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
             ) {
                 Text(stringResource(R.string.start), fontSize = 18.sp)
             }
-            Spacer(Modifier.height(12.dp))
+        }
+
+        // Secondary actions pinned to the bottom
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             OutlinedButton(
                 onClick = onShowSaveDialog,
                 enabled = state.totalMillis > 0,
-                modifier = Modifier.fillMaxWidth(0.55f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = HPad),
+                shape = RoundedCornerShape(16.dp),
             ) {
                 Text(stringResource(R.string.save_as_preset), fontSize = 15.sp)
             }
-        }
 
-        if (presets.isNotEmpty()) {
-            Spacer(Modifier.height(40.dp))
-            PresetsStrip(
-                presets = presets,
-                enabled = true,
-                onLoadPreset = onLoadPreset,
-                onDeletePreset = onDeletePreset,
-            )
-        }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .padding(top = 24.dp, bottom = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                text = stringResource(R.string.alarm_sound),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            TextButton(onClick = onPickAlarmSound) {
-                Text(stringResource(R.string.change))
+            if (presets.isNotEmpty()) {
+                Spacer(Modifier.height(24.dp))
+                PresetsStrip(
+                    presets = presets,
+                    enabled = true,
+                    onLoadPreset = onLoadPreset,
+                    onDeletePreset = onDeletePreset,
+                )
             }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = HPad)
+                    .padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = stringResource(R.string.alarm_sound),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                TextButton(onClick = onPickAlarmSound) {
+                    Text(stringResource(R.string.change))
+                }
+            }
+
+            Spacer(Modifier.height(VPad))
         }
     }
 }
 
 // ---------------------------------------------------------------------------
-// Running / paused layout (non-scrollable so weight() works)
+// Running / paused layout — timer centered, controls + presets at the bottom
 // ---------------------------------------------------------------------------
 
 @Composable
@@ -230,27 +236,9 @@ private fun RunningLayout(
     onDeletePreset: (Preset) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Spacer(Modifier.height(40.dp))
+    Box(modifier = modifier.fillMaxSize()) {
 
-        // Presets at the top with generous top padding.
-        if (presets.isNotEmpty()) {
-            Spacer(Modifier.height(80.dp))
-            PresetsStrip(
-                presets = presets,
-                enabled = false,
-                onLoadPreset = {},
-                onDeletePreset = onDeletePreset,
-            )
-        }
-
-        // Push timer and controls to the lower portion of the screen.
-        Spacer(Modifier.weight(1f))
-
-        // Huge countdown.
+        // Timer — truly centered in the screen
         Text(
             text = formatMillis(state.remainingMillis),
             fontSize = 128.sp,
@@ -259,58 +247,75 @@ private fun RunningLayout(
             color = Color.White,
             textAlign = TextAlign.Start,
             modifier = Modifier
+                .align(Alignment.Center)
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp),
+                .padding(horizontal = HPad),
         )
 
-        Spacer(Modifier.height(16.dp))
-
-        // Pause / Resume — full-width prominent button.
-        TimerControlButton(
-            onClick = if (state.isRunning) onPause else onStart,
-            enabled = !state.isFinished,
-            icon = if (state.isRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
-            label = if (state.isRunning) stringResource(R.string.pause)
-                    else stringResource(R.string.resume),
-            fontSize = 20.sp,
-            iconSize = 20.dp,
-            height = 64.dp,
+        // Controls + presets pinned to the bottom
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
-        )
-
-        Spacer(Modifier.height(10.dp))
-
-        // −1m and +1m side by side.
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // Pause / Resume — full-width
             TimerControlButton(
-                onClick = onSubtractMinute,
-                enabled = state.isRunning,
-                icon = Icons.Default.FastRewind,
-                label = "−1m",
-                modifier = Modifier.weight(1f),
+                onClick = if (state.isRunning) onPause else onStart,
+                enabled = !state.isFinished,
+                icon = if (state.isRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
+                label = if (state.isRunning) stringResource(R.string.pause)
+                        else stringResource(R.string.resume),
+                fontSize = 20.sp,
+                iconSize = 20.dp,
+                height = 64.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = HPad),
             )
-            TimerControlButton(
-                onClick = onAddMinute,
-                enabled = state.isRunning,
-                icon = Icons.Default.FastForward,
-                label = "+1m",
-                modifier = Modifier.weight(1f),
-            )
-        }
 
-        Spacer(Modifier.height(80.dp))
+            Spacer(Modifier.height(10.dp))
+
+            // −1m and +1m side by side
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = HPad),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                TimerControlButton(
+                    onClick = onSubtractMinute,
+                    enabled = state.isRunning,
+                    icon = Icons.Default.FastRewind,
+                    label = "−1m",
+                    modifier = Modifier.weight(1f),
+                )
+                TimerControlButton(
+                    onClick = onAddMinute,
+                    enabled = state.isRunning,
+                    icon = Icons.Default.FastForward,
+                    label = "+1m",
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            if (presets.isNotEmpty()) {
+                Spacer(Modifier.height(16.dp))
+                PresetsStrip(
+                    presets = presets,
+                    enabled = false,
+                    onLoadPreset = {},
+                    onDeletePreset = onDeletePreset,
+                )
+            }
+
+            Spacer(Modifier.height(VPad))
+        }
     }
 }
 
 // ---------------------------------------------------------------------------
-// Timer control button (dark navy + indigo border, used in the running layout)
+// Timer control button (dark navy + indigo border)
 // ---------------------------------------------------------------------------
 
 @Composable
@@ -367,12 +372,12 @@ private fun PresetsStrip(
         textAlign = TextAlign.Center,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp),
+            .padding(horizontal = HPad),
     )
     Spacer(Modifier.height(12.dp))
     LazyRow(
         modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 24.dp),
+        contentPadding = PaddingValues(horizontal = HPad),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         items(presets, key = { it.id }) { preset ->
@@ -513,32 +518,33 @@ private fun DurationPicker(
                 range = 0..99,
                 selected = minutes,
                 onSelected = { minutes = it },
-                modifier = Modifier.width(84.dp),
+                modifier = Modifier.width(100.dp),
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(6.dp))
             Text(
                 text = stringResource(R.string.unit_min),
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         Text(
             text = ":",
-            fontSize = 34.sp,
+            fontSize = 44.sp,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 12.dp),
+            color = Color.White,
+            modifier = Modifier.padding(horizontal = 16.dp),
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             WheelNumberPicker(
                 range = 0..59,
                 selected = seconds,
                 onSelected = { seconds = it },
-                modifier = Modifier.width(84.dp),
+                modifier = Modifier.width(100.dp),
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(6.dp))
             Text(
                 text = stringResource(R.string.unit_sec),
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -557,7 +563,7 @@ private fun WheelNumberPicker(
     modifier: Modifier = Modifier,
 ) {
     val items = remember(range) { range.map { "%02d".format(it) } }
-    val itemHeight = 52.dp
+    val itemHeight = 64.dp
     val listState = rememberLazyListState(
         initialFirstVisibleItemIndex = (selected - range.first).coerceAtLeast(0),
     )
@@ -577,13 +583,14 @@ private fun WheelNumberPicker(
     }
 
     Box(modifier = modifier.height(itemHeight * 3)) {
+        // Selection highlight
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
                 .fillMaxWidth()
                 .height(itemHeight)
-                .clip(RoundedCornerShape(10.dp))
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)),
+                .clip(RoundedCornerShape(12.dp))
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
         )
 
         androidx.compose.foundation.lazy.LazyColumn(
@@ -606,7 +613,7 @@ private fun WheelNumberPicker(
                 ) {
                     Text(
                         text = item,
-                        fontSize = if (isSelected) 32.sp else 22.sp,
+                        fontSize = if (isSelected) 40.sp else 26.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                         fontFamily = FontFamily.Monospace,
                         color = if (isSelected)
@@ -618,6 +625,7 @@ private fun WheelNumberPicker(
             }
         }
 
+        // Fade top
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -629,6 +637,7 @@ private fun WheelNumberPicker(
                     ),
                 ),
         )
+        // Fade bottom
         Box(
             modifier = Modifier
                 .fillMaxWidth()
