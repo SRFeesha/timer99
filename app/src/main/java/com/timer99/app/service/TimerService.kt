@@ -401,6 +401,7 @@ class TimerService : Service() {
                 prefs[WidgetKeys.IS_RUNNING] = state.isRunning
                 prefs[WidgetKeys.IS_ALERTING] = isAlerting
                 prefs[WidgetKeys.REMAINING_MILLIS] = state.remainingMillis
+                prefs[WidgetKeys.TOTAL_MILLIS] = state.totalMillis
                 prefs[WidgetKeys.PRESET_NAME] = presetName
             }
             GlanceAppWidgetManager(applicationContext)
