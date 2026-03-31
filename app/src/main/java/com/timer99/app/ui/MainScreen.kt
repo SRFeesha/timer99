@@ -234,19 +234,19 @@ private fun RunningLayout(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // All content pushed to the bottom for thumb reachability.
-        Spacer(Modifier.weight(1f))
-
-        // Presets strip just above the timer.
+        // Presets at the top with generous top padding.
         if (presets.isNotEmpty()) {
+            Spacer(Modifier.height(80.dp))
             PresetsStrip(
                 presets = presets,
                 enabled = false,
                 onLoadPreset = {},
                 onDeletePreset = onDeletePreset,
             )
-            Spacer(Modifier.height(24.dp))
         }
+
+        // Push timer and controls to the lower portion of the screen.
+        Spacer(Modifier.weight(1f))
 
         // Huge countdown.
         Text(
@@ -261,15 +261,31 @@ private fun RunningLayout(
                 .padding(horizontal = 24.dp),
         )
 
-        Spacer(Modifier.height(36.dp))
+        Spacer(Modifier.height(16.dp))
 
-        // Control row: −1m | Pause/Resume | +1m  (equal width, card-styled)
+        // Pause / Resume — full-width prominent button.
+        TimerControlButton(
+            onClick = if (state.isRunning) onPause else onStart,
+            enabled = !state.isFinished,
+            icon = if (state.isRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
+            label = if (state.isRunning) stringResource(R.string.pause)
+                    else stringResource(R.string.resume),
+            fontSize = 20.sp,
+            iconSize = 20.dp,
+            height = 64.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp),
+        )
+
+        Spacer(Modifier.height(10.dp))
+
+        // −1m and +1m side by side.
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
         ) {
             TimerControlButton(
                 onClick = onSubtractMinute,
@@ -278,16 +294,6 @@ private fun RunningLayout(
                 label = "−1m",
                 modifier = Modifier.weight(1f),
             )
-
-            TimerControlButton(
-                onClick = if (state.isRunning) onPause else onStart,
-                enabled = !state.isFinished,
-                icon = if (state.isRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
-                label = if (state.isRunning) stringResource(R.string.pause)
-                        else stringResource(R.string.resume),
-                modifier = Modifier.weight(1f),
-            )
-
             TimerControlButton(
                 onClick = onAddMinute,
                 enabled = state.isRunning,
@@ -297,7 +303,7 @@ private fun RunningLayout(
             )
         }
 
-        Spacer(Modifier.height(56.dp))
+        Spacer(Modifier.height(48.dp))
     }
 }
 
@@ -312,11 +318,14 @@ private fun TimerControlButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     modifier: Modifier = Modifier,
+    fontSize: androidx.compose.ui.unit.TextUnit = 14.sp,
+    iconSize: androidx.compose.ui.unit.Dp = 16.dp,
+    height: androidx.compose.ui.unit.Dp = 52.dp,
 ) {
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.height(52.dp),
+        modifier = modifier.height(height),
         shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.outlinedButtonColors(
             containerColor = PresetCardBackground,
@@ -329,10 +338,10 @@ private fun TimerControlButton(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            modifier = Modifier.size(16.dp),
+            modifier = Modifier.size(iconSize),
         )
-        Spacer(Modifier.width(6.dp))
-        Text(label, fontSize = 14.sp)
+        Spacer(Modifier.width(8.dp))
+        Text(label, fontSize = fontSize)
     }
 }
 
