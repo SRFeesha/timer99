@@ -13,6 +13,7 @@ val Context.widgetDataStore: DataStore<Preferences> by preferencesDataStore(name
 
 object WidgetKeys {
     val IS_RUNNING = booleanPreferencesKey("is_running")
+    val IS_ALERTING = booleanPreferencesKey("is_alerting")   // true while alarm is ringing
     val REMAINING_MILLIS = longPreferencesKey("remaining_millis")
     val PRESET_NAME = stringPreferencesKey("preset_name")
     // Serialised preset list: "Name1|300,Name2|1500". Written by MainActivity.

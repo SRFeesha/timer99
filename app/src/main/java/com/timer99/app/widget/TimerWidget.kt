@@ -57,6 +57,7 @@ class TimerWidget : GlanceAppWidget() {
 @Composable
 private fun WidgetContent(prefs: Preferences, context: Context) {
     val isRunning = prefs[WidgetKeys.IS_RUNNING] ?: false
+    val isAlerting = prefs[WidgetKeys.IS_ALERTING] ?: false
     val remainingMillis = prefs[WidgetKeys.REMAINING_MILLIS] ?: 0L
     val presetName = prefs[WidgetKeys.PRESET_NAME] ?: ""
 
@@ -66,7 +67,7 @@ private fun WidgetContent(prefs: Preferences, context: Context) {
         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
     }
 
-    if (!isRunning) {
+    if (!isRunning && !isAlerting) {
         // Idle — transparent and non-interactive; touches fall through to the home screen.
         Box(modifier = GlanceModifier.fillMaxSize()) {}
         return

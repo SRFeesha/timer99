@@ -59,6 +59,9 @@ class TimerService : Service() {
     val timerState: StateFlow<TimerState> = _timerState.asStateFlow()
 
     private var currentPresetName: String? = null
+    /** True from the moment the alarm starts until 3 s after the user dismisses it. */
+    private var isAlerting: Boolean = false
+    private var hideWidgetJob: Job? = null
 
     private val binder = TimerBinder()
 
@@ -166,6 +169,8 @@ class TimerService : Service() {
     fun resetTimer() {
         tickJob?.cancel()
         tickJob = null
+        hideWidgetJob?.cancel()
+        isAlerting = false
         stopRefreshLoop()
         stopForeground(STOP_FOREGROUND_REMOVE)
         nm().cancel(ALERT_NOTIFICATION_ID)
@@ -204,11 +209,19 @@ class TimerService : Service() {
         val total = _timerState.value.totalMillis
         _timerState.value = TimerState.initial(total)
         currentPresetName = null
-        pushWidgetState()
+        // Keep the widget visible for 3 s, then hide it.
+        hideWidgetJob?.cancel()
+        hideWidgetJob = scope.launch {
+            delay(WIDGET_HIDE_DELAY_MS)
+            isAlerting = false
+            pushWidgetState()
+        }
     }
 
     fun extendAndRestart(extraMillis: Long) {
         stopAlertSoundAndVibration()
+        hideWidgetJob?.cancel()
+        isAlerting = false
         stopForeground(STOP_FOREGROUND_REMOVE)
         _timerState.update { st ->
             val newRemaining = st.remainingMillis + extraMillis
@@ -242,6 +255,7 @@ class TimerService : Service() {
      */
     private fun onTimerFinished() {
         stopRefreshLoop()
+        isAlerting = true
         pushWidgetState()
         startAlertSoundAndVibration()
 
@@ -385,6 +399,7 @@ class TimerService : Service() {
         scope.launch {
             applicationContext.widgetDataStore.edit { prefs ->
                 prefs[WidgetKeys.IS_RUNNING] = state.isRunning
+                prefs[WidgetKeys.IS_ALERTING] = isAlerting
                 prefs[WidgetKeys.REMAINING_MILLIS] = state.remainingMillis
                 prefs[WidgetKeys.PRESET_NAME] = presetName
             }
@@ -481,5 +496,6 @@ class TimerService : Service() {
         private const val TICK_MS = 250L
         private const val RAMP_TICK_MS = 100L
         private const val VIBRATION_DELAY_MS = 3_000L
+        private const val WIDGET_HIDE_DELAY_MS = 3_000L
     }
 }
