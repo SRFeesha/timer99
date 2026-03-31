@@ -198,7 +198,13 @@ class TimerService : Service() {
 
     fun dismissAlert() {
         stopAlertSoundAndVibration()
+        nm().cancel(ALERT_NOTIFICATION_ID)
         stopForeground(STOP_FOREGROUND_REMOVE)
+        // Reset to idle so the next app open shows the picker, not the finished screen.
+        val total = _timerState.value.totalMillis
+        _timerState.value = TimerState.initial(total)
+        currentPresetName = null
+        pushWidgetState()
     }
 
     fun extendAndRestart(extraMillis: Long) {

@@ -67,12 +67,8 @@ private fun WidgetContent(prefs: Preferences, context: Context) {
     }
 
     if (!isRunning) {
-        // Idle — transparent, but tapping still opens the app.
-        Box(
-            modifier = GlanceModifier
-                .fillMaxSize()
-                .clickable(actionStartActivity(openMainIntent)),
-        ) {}
+        // Idle — transparent and non-interactive; touches fall through to the home screen.
+        Box(modifier = GlanceModifier.fillMaxSize()) {}
         return
     }
 
