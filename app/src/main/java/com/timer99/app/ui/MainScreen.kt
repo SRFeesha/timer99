@@ -234,6 +234,8 @@ private fun RunningLayout(
         modifier = modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Spacer(Modifier.height(40.dp))
+
         // Presets at the top with generous top padding.
         if (presets.isNotEmpty()) {
             Spacer(Modifier.height(80.dp))
@@ -303,7 +305,7 @@ private fun RunningLayout(
             )
         }
 
-        Spacer(Modifier.height(48.dp))
+        Spacer(Modifier.height(80.dp))
     }
 }
 
