@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -213,12 +214,13 @@ private fun PickerLayout(
             }
         }
 
-        // Settings button — bottom-end corner
+        // Settings button — top-end corner, below the status bar
         IconButton(
             onClick = { showSettingsSheet = true },
             modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = HPad, bottom = VPad / 2),
+                .align(Alignment.TopEnd)
+                .statusBarsPadding()
+                .padding(end = HPad, top = 8.dp),
         ) {
             Icon(
                 imageVector = Icons.Default.Settings,
