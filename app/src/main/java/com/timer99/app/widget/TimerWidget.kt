@@ -116,10 +116,17 @@ private fun WidgetContent(prefs: Preferences, context: Context) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            androidx.glance.Button(
-                text = "Pause",
-                onClick = actionRunCallback<PauseCallback>(),
-            )
+            if (isRunning) {
+                androidx.glance.Button(
+                    text = "Pause",
+                    onClick = actionRunCallback<PauseCallback>(),
+                )
+            } else {
+                androidx.glance.Button(
+                    text = "Resume",
+                    onClick = actionRunCallback<ResumeCallback>(),
+                )
+            }
             Spacer(GlanceModifier.width(8.dp))
             androidx.glance.Button(
                 text = "+1 min",

@@ -22,6 +22,20 @@ class PauseCallback : ActionCallback {
     }
 }
 
+/** Resumes a paused timer via the foreground service. */
+class ResumeCallback : ActionCallback {
+    override suspend fun onAction(
+        context: Context,
+        glanceId: GlanceId,
+        parameters: ActionParameters,
+    ) {
+        ContextCompat.startForegroundService(
+            context,
+            Intent(context, TimerService::class.java).apply { action = TimerService.ACTION_RESUME },
+        )
+    }
+}
+
 /** Adds 60 s to the running timer via the foreground service. */
 class AddMinuteCallback : ActionCallback {
     override suspend fun onAction(

@@ -95,6 +95,7 @@ class TimerService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             ACTION_STOP           -> pauseTimer()
+            ACTION_RESUME         -> startTimer()
             ACTION_ADD_MINUTE     -> addMinute()
             ACTION_SUBTRACT_MINUTE -> subtractMinute()
             ACTION_DISMISS_ALERT -> dismissAlert()
@@ -479,6 +480,7 @@ class TimerService : Service() {
         private const val NOTIFICATION_ID = 99
 
         const val ACTION_STOP             = "com.timer99.app.ACTION_STOP"
+        const val ACTION_RESUME           = "com.timer99.app.ACTION_RESUME"
         const val ACTION_ADD_MINUTE       = "com.timer99.app.ACTION_ADD_MINUTE"
         const val ACTION_SUBTRACT_MINUTE  = "com.timer99.app.ACTION_SUBTRACT_MINUTE"
         const val ACTION_DISMISS_ALERT = "com.timer99.app.ACTION_DISMISS_ALERT"
