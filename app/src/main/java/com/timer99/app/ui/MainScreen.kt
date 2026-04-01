@@ -172,17 +172,25 @@ private fun PickerLayout(
             Button(
                 onClick = onStart,
                 enabled = state.totalMillis > 0,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = cs.primary,
                     contentColor = cs.onPrimary,
                 ),
             ) {
+                Icon(
+                    imageVector = Icons.Default.PlayArrow,
+                    contentDescription = null,
+                    modifier = Modifier.size(36.dp),
+                )
+                Spacer(Modifier.width(10.dp))
                 Text(
                     stringResource(R.string.start),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.ExtraBold,
                 )
             }
         }
@@ -205,12 +213,12 @@ private fun PickerLayout(
             }
         }
 
-        // Settings button — top-end corner
+        // Settings button — bottom-end corner
         IconButton(
             onClick = { showSettingsSheet = true },
             modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(end = HPad, top = VPad / 2),
+                .align(Alignment.BottomEnd)
+                .padding(end = HPad, bottom = VPad / 2),
         ) {
             Icon(
                 imageVector = Icons.Default.Settings,
@@ -516,9 +524,10 @@ private fun SavePresetDialog(
 }
 
 private fun formatPresetDuration(seconds: Int): String {
-    val m = seconds / 60
+    val h = seconds / 3600
+    val m = (seconds % 3600) / 60
     val s = seconds % 60
-    return "%d:%02d".format(m, s)
+    return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%d:%02d".format(m, s)
 }
 
 // ---------------------------------------------------------------------------
@@ -532,23 +541,29 @@ private fun DurationPicker(
     modifier: Modifier = Modifier,
 ) {
     val cs = MaterialTheme.colorScheme
-    val initialMinutes = (totalMillis / 60_000L).toInt().coerceIn(0, 99)
-    val initialSeconds = ((totalMillis % 60_000L) / 1_000L).toInt().coerceIn(0, 59)
+    val totalSec = totalMillis / 1_000L
+    val initialHours   = (totalSec / 3600L).toInt().coerceIn(0, 23)
+    val initialMinutes = ((totalSec % 3600L) / 60L).toInt().coerceIn(0, 59)
+    val initialSeconds = (totalSec % 60L).toInt().coerceIn(0, 59)
 
+    var hours   by remember { mutableIntStateOf(initialHours) }
     var minutes by remember { mutableIntStateOf(initialMinutes) }
     var seconds by remember { mutableIntStateOf(initialSeconds) }
 
     LaunchedEffect(totalMillis) {
-        val newMin = (totalMillis / 60_000L).toInt().coerceIn(0, 99)
-        val newSec = ((totalMillis % 60_000L) / 1_000L).toInt().coerceIn(0, 59)
-        if (newMin != minutes || newSec != seconds) {
+        val ts = totalMillis / 1_000L
+        val newH   = (ts / 3600L).toInt().coerceIn(0, 23)
+        val newMin = ((ts % 3600L) / 60L).toInt().coerceIn(0, 59)
+        val newSec = (ts % 60L).toInt().coerceIn(0, 59)
+        if (newH != hours || newMin != minutes || newSec != seconds) {
+            hours   = newH
             minutes = newMin
             seconds = newSec
         }
     }
 
-    LaunchedEffect(minutes, seconds) {
-        onDurationChanged((minutes * 60L + seconds) * 1_000L)
+    LaunchedEffect(hours, minutes, seconds) {
+        onDurationChanged((hours * 3600L + minutes * 60L + seconds) * 1_000L)
     }
 
     Row(
@@ -558,10 +573,31 @@ private fun DurationPicker(
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             WheelNumberPicker(
-                range = 0..99,
+                range = 0..23,
+                selected = hours,
+                onSelected = { hours = it },
+                modifier = Modifier.width(80.dp),
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = stringResource(R.string.unit_hr),
+                style = MaterialTheme.typography.labelMedium,
+                color = cs.onSurfaceVariant,
+            )
+        }
+        Text(
+            text = ":",
+            fontSize = 44.sp,
+            fontWeight = FontWeight.Bold,
+            color = cs.primary,
+            modifier = Modifier.padding(horizontal = 12.dp),
+        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            WheelNumberPicker(
+                range = 0..59,
                 selected = minutes,
                 onSelected = { minutes = it },
-                modifier = Modifier.width(100.dp),
+                modifier = Modifier.width(80.dp),
             )
             Spacer(Modifier.height(6.dp))
             Text(
@@ -575,14 +611,14 @@ private fun DurationPicker(
             fontSize = 44.sp,
             fontWeight = FontWeight.Bold,
             color = cs.primary,
-            modifier = Modifier.padding(horizontal = 16.dp),
+            modifier = Modifier.padding(horizontal = 12.dp),
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             WheelNumberPicker(
                 range = 0..59,
                 selected = seconds,
                 onSelected = { seconds = it },
-                modifier = Modifier.width(100.dp),
+                modifier = Modifier.width(80.dp),
             )
             Spacer(Modifier.height(6.dp))
             Text(

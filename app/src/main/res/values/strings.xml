@@ -37,6 +37,7 @@
     <string name="cancel">Cancel</string>
 
     <!-- Duration picker units -->
+    <string name="unit_hr">hr</string>
     <string name="unit_min">min</string>
     <string name="unit_sec">sec</string>
 </resources>
