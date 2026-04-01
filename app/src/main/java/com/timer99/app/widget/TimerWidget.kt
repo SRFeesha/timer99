@@ -6,6 +6,9 @@ import android.content.Intent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import android.os.Build
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -13,13 +16,14 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
-import androidx.glance.ImageProvider
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
+import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
+import androidx.glance.unit.ColorProvider
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
@@ -34,9 +38,7 @@ import androidx.glance.text.FontWeight
 import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
-import androidx.glance.unit.ColorProvider
 import com.timer99.app.MainActivity
-import com.timer99.app.R
 import com.timer99.app.data.WidgetKeys
 import com.timer99.app.data.widgetDataStore
 import com.timer99.app.model.formatMillis
@@ -54,8 +56,16 @@ class TimerWidget : GlanceAppWidget() {
     }
 }
 
+private val FallbackPrimary = Color(0xFF6366F1)
+
 @Composable
 private fun WidgetContent(prefs: Preferences, context: Context) {
+    val cs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        dynamicDarkColorScheme(context)
+    } else {
+        darkColorScheme(primary = FallbackPrimary)
+    }
+
     val isRunning = prefs[WidgetKeys.IS_RUNNING] ?: false
     val isAlerting = prefs[WidgetKeys.IS_ALERTING] ?: false
     val remainingMillis = prefs[WidgetKeys.REMAINING_MILLIS] ?: 0L
@@ -75,11 +85,12 @@ private fun WidgetContent(prefs: Preferences, context: Context) {
         return
     }
 
-    // Active — semi-transparent dark card. Tapping anywhere brings the app to foreground.
+    // Active — themed card. Tapping anywhere brings the app to foreground.
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(ImageProvider(R.drawable.widget_bg_active))
+            .background(ColorProvider(cs.surface))
+            .cornerRadius(16.dp)
             .padding(horizontal = 12.dp, vertical = 10.dp)
             .clickable(actionStartActivity(openMainIntent)),
         verticalAlignment = Alignment.CenterVertically,
@@ -87,11 +98,11 @@ private fun WidgetContent(prefs: Preferences, context: Context) {
     ) {
         // Large countdown
         Text(
-            text = formatMillis(remainingMillis),
+            text = formatWidgetTime(remainingMillis),
             style = TextStyle(
                 fontSize = 56.sp,
                 fontWeight = FontWeight.Bold,
-                color = ColorProvider(Color.White),
+                color = ColorProvider(cs.primary),
                 textAlign = TextAlign.Center,
             ),
         )
@@ -102,7 +113,7 @@ private fun WidgetContent(prefs: Preferences, context: Context) {
                 text = presetName,
                 style = TextStyle(
                     fontSize = 12.sp,
-                    color = ColorProvider(Color(0xFF94A3B8)),
+                    color = ColorProvider(cs.secondary),
                     textAlign = TextAlign.Center,
                 ),
             )
