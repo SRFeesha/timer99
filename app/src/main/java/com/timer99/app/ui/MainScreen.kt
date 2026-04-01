@@ -22,21 +22,30 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FastRewind
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -48,6 +57,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
@@ -127,9 +137,10 @@ fun MainScreen(
 }
 
 // ---------------------------------------------------------------------------
-// Picker layout — Rolodex centered, secondary actions at the bottom
+// Picker layout — Rolodex centered, presets at the bottom, settings top-end
 // ---------------------------------------------------------------------------
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun PickerLayout(
     state: TimerState,
@@ -142,6 +153,7 @@ private fun PickerLayout(
     onShowSaveDialog: () -> Unit,
 ) {
     val cs = MaterialTheme.colorScheme
+    var showSettingsSheet by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -175,58 +187,72 @@ private fun PickerLayout(
             }
         }
 
-        // Secondary actions pinned to the bottom
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            OutlinedButton(
-                onClick = onShowSaveDialog,
-                enabled = state.totalMillis > 0,
+        // Presets strip pinned to the bottom
+        if (presets.isNotEmpty()) {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = HPad),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = cs.onSurfaceVariant,
-                    disabledContentColor = cs.outline,
-                ),
-                border = BorderStroke(1.dp, cs.outlineVariant),
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(stringResource(R.string.save_as_preset), fontSize = 15.sp)
-            }
-
-            if (presets.isNotEmpty()) {
-                Spacer(Modifier.height(24.dp))
                 PresetsStrip(
                     presets = presets,
                     enabled = true,
                     onLoadPreset = onLoadPreset,
                     onDeletePreset = onDeletePreset,
                 )
+                Spacer(Modifier.height(VPad))
             }
+        }
 
-            Row(
+        // Settings button — top-end corner
+        IconButton(
+            onClick = { showSettingsSheet = true },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(end = HPad, top = VPad / 2),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Settings,
+                contentDescription = "Settings",
+                tint = cs.onSurfaceVariant,
+            )
+        }
+    }
+
+    if (showSettingsSheet) {
+        ModalBottomSheet(
+            onDismissRequest = { showSettingsSheet = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        ) {
+            Text(
+                text = "Settings",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(horizontal = HPad, vertical = 8.dp),
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.save_as_preset)) },
+                leadingContent = {
+                    Icon(Icons.Default.Bookmark, contentDescription = null)
+                },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = HPad)
-                    .padding(top = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = stringResource(R.string.alarm_sound),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = cs.outline,
-                )
-                TextButton(onClick = onPickAlarmSound) {
-                    Text(stringResource(R.string.change), color = cs.primary)
-                }
-            }
-
-            Spacer(Modifier.height(VPad))
+                    .clickable(enabled = state.totalMillis > 0) {
+                        showSettingsSheet = false
+                        onShowSaveDialog()
+                    }
+                    .alpha(if (state.totalMillis > 0) 1f else 0.38f),
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.alarm_sound)) },
+                leadingContent = {
+                    Icon(Icons.Default.Notifications, contentDescription = null)
+                },
+                modifier = Modifier.clickable {
+                    showSettingsSheet = false
+                    onPickAlarmSound()
+                },
+            )
+            Spacer(Modifier.height(32.dp))
         }
     }
 }
