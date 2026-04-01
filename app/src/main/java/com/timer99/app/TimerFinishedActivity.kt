@@ -30,7 +30,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
+import com.timer99.app.data.selectedTeamFlow
+import com.timer99.app.model.Team
 import com.timer99.app.service.TimerService
 import com.timer99.app.ui.theme.Timer99Theme
 
@@ -59,7 +63,9 @@ class TimerFinishedActivity : ComponentActivity() {
         })
 
         setContent {
-            Timer99Theme {
+            val team by applicationContext.selectedTeamFlow
+                .collectAsState(initial = Team.DEFAULT_TEAM)
+            Timer99Theme(team = team) {
                 FinishedScreen(
                     presetName = presetName,
                     onDismiss = ::dismiss,
@@ -91,7 +97,7 @@ class TimerFinishedActivity : ComponentActivity() {
 @Preview(showBackground = true, name = "Finished — with preset name")
 @Composable
 private fun FinishedScreenPreview() {
-    Timer99Theme {
+    Timer99Theme(team = Team.LAKERS) {
         FinishedScreen(
             presetName = "Pomodoro",
             onDismiss = {},
@@ -104,7 +110,7 @@ private fun FinishedScreenPreview() {
 @Preview(showBackground = true, name = "Finished — no preset")
 @Composable
 private fun FinishedScreenNoPresetPreview() {
-    Timer99Theme {
+    Timer99Theme(team = Team.CHIEFS) {
         FinishedScreen(
             presetName = null,
             onDismiss = {},
@@ -143,9 +149,9 @@ private fun FinishedScreen(
             }
             Text(
                 text = stringResource(R.string.timer_finished),
-                fontSize = 42.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 64.sp,
+                fontWeight = FontWeight.Black,
+                color = MaterialTheme.colorScheme.primary,
                 textAlign = TextAlign.Center,
             )
             Spacer(Modifier.height(56.dp))
