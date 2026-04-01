@@ -30,7 +30,10 @@ import com.timer99.app.data.AppDatabase
 import com.timer99.app.data.DefaultPresetRepository
 import com.timer99.app.data.WidgetKeys
 import com.timer99.app.data.encodePresets
+import com.timer99.app.data.savePalette
+import com.timer99.app.data.selectedPaletteFlow
 import com.timer99.app.data.widgetDataStore
+import com.timer99.app.model.Palette
 import com.timer99.app.service.TimerService
 import com.timer99.app.ui.MainScreen
 import com.timer99.app.ui.theme.Timer99Theme
@@ -106,10 +109,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             val state by viewModel.uiState.collectAsStateWithLifecycle()
             val presets by viewModel.presets.collectAsStateWithLifecycle()
-            Timer99Theme {
+            val selectedPalette by applicationContext.selectedPaletteFlow
+                .collectAsStateWithLifecycle(initialValue = Palette.DEFAULT_PALETTE)
+            Timer99Theme(palette = selectedPalette) {
                 MainScreen(
                     state = state,
                     presets = presets,
+                    selectedPalette = selectedPalette,
                     onStart = { handleStartClick() },
                     onPause = { viewModel.pauseTimer() },
                     onAddMinute = { viewModel.addMinute() },
@@ -120,6 +126,7 @@ class MainActivity : ComponentActivity() {
                     onSavePreset = { name, seconds -> viewModel.savePreset(name, seconds) },
                     onDeletePreset = { preset -> viewModel.deletePreset(preset) },
                     onPickAlarmSound = { openSoundPicker() },
+                    onSelectPalette = { palette -> lifecycleScope.launch { applicationContext.savePalette(palette) } },
                     modifier = Modifier,
                 )
             }
