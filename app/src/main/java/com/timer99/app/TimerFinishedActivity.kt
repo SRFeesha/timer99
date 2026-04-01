@@ -30,11 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
-import com.timer99.app.data.selectedTeamFlow
-import com.timer99.app.model.Team
 import com.timer99.app.service.TimerService
 import com.timer99.app.ui.theme.Timer99Theme
 
@@ -63,9 +59,7 @@ class TimerFinishedActivity : ComponentActivity() {
         })
 
         setContent {
-            val team by applicationContext.selectedTeamFlow
-                .collectAsState(initial = Team.DEFAULT_TEAM)
-            Timer99Theme(team = team) {
+            Timer99Theme {
                 FinishedScreen(
                     presetName = presetName,
                     onDismiss = ::dismiss,
@@ -97,7 +91,7 @@ class TimerFinishedActivity : ComponentActivity() {
 @Preview(showBackground = true, name = "Finished — with preset name")
 @Composable
 private fun FinishedScreenPreview() {
-    Timer99Theme(team = Team.LAKERS) {
+    Timer99Theme {
         FinishedScreen(
             presetName = "Pomodoro",
             onDismiss = {},
@@ -110,7 +104,7 @@ private fun FinishedScreenPreview() {
 @Preview(showBackground = true, name = "Finished — no preset")
 @Composable
 private fun FinishedScreenNoPresetPreview() {
-    Timer99Theme(team = Team.CHIEFS) {
+    Timer99Theme {
         FinishedScreen(
             presetName = null,
             onDismiss = {},

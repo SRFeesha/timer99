@@ -1,4 +1,6 @@
 package com.timer99.app.ui.theme
 
-// Team brand colours and semantic tokens are defined in Team.kt and ZenTokens.kt.
-// This file is intentionally left minimal.
+import androidx.compose.ui.graphics.Color
+
+// Used as the static-colour fallback on Android < 12 (no dynamic-colour support).
+internal val FallbackPrimary = Color(0xFF6366F1)

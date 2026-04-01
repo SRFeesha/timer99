@@ -4,7 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
@@ -22,7 +21,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FastForward
@@ -62,10 +60,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.timer99.app.R
 import com.timer99.app.data.Preset
-import com.timer99.app.model.Palette
 import com.timer99.app.model.TimerState
 import com.timer99.app.model.formatMillis
-import com.timer99.app.ui.theme.LocalZen
 import com.timer99.app.ui.theme.Timer99Theme
 import kotlinx.coroutines.flow.filter
 
@@ -76,7 +72,6 @@ private val VPad = 48.dp
 fun MainScreen(
     state: TimerState,
     presets: List<Preset>,
-    selectedPalette: Palette,
     onStart: () -> Unit,
     onPause: () -> Unit,
     onAddMinute: () -> Unit,
@@ -87,7 +82,6 @@ fun MainScreen(
     onSavePreset: (name: String, durationSeconds: Int) -> Unit,
     onDeletePreset: (Preset) -> Unit,
     onPickAlarmSound: () -> Unit,
-    onSelectPalette: (Palette) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val showPicker = !state.isRunning && !state.isFinished &&
@@ -100,14 +94,12 @@ fun MainScreen(
             PickerLayout(
                 state = state,
                 presets = presets,
-                selectedPalette = selectedPalette,
                 onStart = onStart,
                 onSetDuration = onSetDuration,
                 onLoadPreset = onLoadPreset,
                 onDeletePreset = onDeletePreset,
                 onPickAlarmSound = onPickAlarmSound,
                 onShowSaveDialog = { showSaveDialog = true },
-                onSelectPalette = onSelectPalette,
             )
         } else {
             RunningLayout(
@@ -135,35 +127,23 @@ fun MainScreen(
 }
 
 // ---------------------------------------------------------------------------
-// Picker layout — theme chip at top, Rolodex centered, secondary actions at bottom
+// Picker layout — Rolodex centered, secondary actions at the bottom
 // ---------------------------------------------------------------------------
 
 @Composable
 private fun PickerLayout(
     state: TimerState,
     presets: List<Preset>,
-    selectedPalette: Palette,
     onStart: () -> Unit,
     onSetDuration: (Long) -> Unit,
     onLoadPreset: (Preset) -> Unit,
     onDeletePreset: (Preset) -> Unit,
     onPickAlarmSound: () -> Unit,
     onShowSaveDialog: () -> Unit,
-    onSelectPalette: (Palette) -> Unit,
 ) {
-    val zen = LocalZen.current
-    var showThemePicker by remember { mutableStateOf(false) }
+    val cs = MaterialTheme.colorScheme
 
     Box(modifier = Modifier.fillMaxSize()) {
-
-        // Theme chip — top-start corner
-        ThemeChip(
-            palette = selectedPalette,
-            onClick = { showThemePicker = true },
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(start = HPad, top = VPad / 2),
-        )
 
         // Duration picker + Start — vertically centered
         Column(
@@ -183,8 +163,8 @@ private fun PickerLayout(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = zen.accent,
-                    contentColor = zen.accentForeground,
+                    containerColor = cs.primary,
+                    contentColor = cs.onPrimary,
                 ),
             ) {
                 Text(
@@ -210,10 +190,10 @@ private fun PickerLayout(
                     .padding(horizontal = HPad),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = zen.foregroundMuted,
-                    disabledContentColor = zen.foregroundSubtle,
+                    contentColor = cs.onSurfaceVariant,
+                    disabledContentColor = cs.outline,
                 ),
-                border = BorderStroke(1.dp, zen.border),
+                border = BorderStroke(1.dp, cs.outlineVariant),
             ) {
                 Text(stringResource(R.string.save_as_preset), fontSize = 15.sp)
             }
@@ -239,23 +219,15 @@ private fun PickerLayout(
                 Text(
                     text = stringResource(R.string.alarm_sound),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = zen.foregroundSubtle,
+                    color = cs.outline,
                 )
                 TextButton(onClick = onPickAlarmSound) {
-                    Text(stringResource(R.string.change), color = zen.accent)
+                    Text(stringResource(R.string.change), color = cs.primary)
                 }
             }
 
             Spacer(Modifier.height(VPad))
         }
-    }
-
-    if (showThemePicker) {
-        ThemePickerDialog(
-            selectedPalette = selectedPalette,
-            onSelect = onSelectPalette,
-            onDismiss = { showThemePicker = false },
-        )
     }
 }
 
@@ -273,7 +245,7 @@ private fun RunningLayout(
     onSubtractMinute: () -> Unit,
     onDeletePreset: (Preset) -> Unit,
 ) {
-    val zen = LocalZen.current
+    val cs = MaterialTheme.colorScheme
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -284,7 +256,7 @@ private fun RunningLayout(
             fontSize = 128.sp,
             fontWeight = FontWeight.Black,
             fontFamily = FontFamily.Default,
-            color = if (state.isRunning) zen.accent else zen.foreground,
+            color = if (state.isRunning) cs.primary else cs.onSurface,
             textAlign = TextAlign.Start,
             modifier = Modifier
                 .align(Alignment.Center)
@@ -355,126 +327,6 @@ private fun RunningLayout(
 }
 
 // ---------------------------------------------------------------------------
-// Theme chip — tappable pill showing the active palette
-// ---------------------------------------------------------------------------
-
-@Composable
-private fun ThemeChip(
-    palette: Palette,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val zen = LocalZen.current
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
-            .background(zen.backgroundSubtle)
-            .border(1.dp, zen.accentBorder, RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 9.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Box(
-            modifier = Modifier
-                .size(10.dp)
-                .clip(CircleShape)
-                .background(palette.primary),
-        )
-        Text(
-            text = palette.displayName,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = zen.foreground,
-        )
-        Text(
-            text = "›",
-            fontSize = 15.sp,
-            color = zen.foregroundMuted,
-        )
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Theme picker dialog
-// ---------------------------------------------------------------------------
-
-@Composable
-private fun ThemePickerDialog(
-    selectedPalette: Palette,
-    onSelect: (Palette) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val zen = LocalZen.current
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        containerColor = zen.backgroundSubtle,
-        titleContentColor = zen.foreground,
-        textContentColor = zen.foreground,
-        title = {
-            Text(
-                "Theme",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Palette.entries.chunked(2).forEach { pair ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        pair.forEach { palette ->
-                            val isSelected = palette == selectedPalette
-                            Row(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(
-                                        if (isSelected) palette.primary.copy(alpha = 0.18f)
-                                        else zen.backgroundMuted,
-                                    )
-                                    .border(
-                                        width = if (isSelected) 2.dp else 1.dp,
-                                        color = if (isSelected) palette.primary else zen.border,
-                                        shape = RoundedCornerShape(12.dp),
-                                    )
-                                    .clickable { onSelect(palette); onDismiss() }
-                                    .padding(horizontal = 12.dp, vertical = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(18.dp)
-                                        .clip(CircleShape)
-                                        .background(palette.primary),
-                                )
-                                Text(
-                                    text = palette.displayName,
-                                    fontSize = 14.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isSelected) zen.foreground else zen.foregroundMuted,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                        }
-                        if (pair.size == 1) Spacer(Modifier.weight(1f))
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Done", color = zen.accent, fontWeight = FontWeight.SemiBold)
-            }
-        },
-    )
-}
-
-// ---------------------------------------------------------------------------
 // Timer control button (subtle card + accent border)
 // ---------------------------------------------------------------------------
 
@@ -489,19 +341,19 @@ private fun TimerControlButton(
     iconSize: androidx.compose.ui.unit.Dp = 16.dp,
     height: androidx.compose.ui.unit.Dp = 52.dp,
 ) {
-    val zen = LocalZen.current
+    val cs = MaterialTheme.colorScheme
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier.height(height),
         shape = RoundedCornerShape(16.dp),
         colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = zen.backgroundSubtle,
-            contentColor = zen.foreground,
-            disabledContainerColor = zen.backgroundMuted,
-            disabledContentColor = zen.foregroundSubtle,
+            containerColor = cs.surfaceVariant,
+            contentColor = cs.onSurface,
+            disabledContainerColor = cs.surface,
+            disabledContentColor = cs.onSurfaceVariant,
         ),
-        border = BorderStroke(1.dp, if (enabled) zen.accentBorder else zen.border),
+        border = BorderStroke(1.dp, if (enabled) cs.primary.copy(alpha = 0.5f) else cs.outlineVariant),
     ) {
         Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(iconSize))
         Spacer(Modifier.width(8.dp))
@@ -520,13 +372,12 @@ private fun PresetsStrip(
     onLoadPreset: (Preset) -> Unit,
     onDeletePreset: (Preset) -> Unit,
 ) {
-    val zen = LocalZen.current
     Text(
         text = stringResource(R.string.presets_title).uppercase(),
         fontSize = 13.sp,
         fontWeight = FontWeight.SemiBold,
         letterSpacing = 2.sp,
-        color = zen.accent,
+        color = MaterialTheme.colorScheme.primary,
         textAlign = TextAlign.Center,
         modifier = Modifier
             .fillMaxWidth()
@@ -562,13 +413,13 @@ private fun PresetCard(
     onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val zen = LocalZen.current
+    val cs = MaterialTheme.colorScheme
     Box(
         modifier = modifier
             .width(155.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(zen.backgroundSubtle)
-            .border(1.dp, zen.accentBorder, RoundedCornerShape(16.dp))
+            .background(cs.surfaceVariant)
+            .border(1.dp, cs.primary.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
             .combinedClickable(
                 onClick = { if (enabled) onClick() },
                 onLongClick = onLongClick,
@@ -580,7 +431,7 @@ private fun PresetCard(
                 text = preset.name,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium,
-                color = zen.foreground,
+                color = cs.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -588,7 +439,7 @@ private fun PresetCard(
             Text(
                 text = formatPresetDuration(preset.durationSeconds),
                 fontSize = 16.sp,
-                color = zen.foregroundMuted,
+                color = cs.onSurfaceVariant,
                 fontFamily = FontFamily.Monospace,
             )
         }
@@ -605,13 +456,13 @@ private fun SavePresetDialog(
     onConfirm: (name: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val zen = LocalZen.current
+    val cs = MaterialTheme.colorScheme
     var name by remember { mutableStateOf("") }
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = zen.backgroundSubtle,
-        titleContentColor = zen.foreground,
-        textContentColor = zen.foreground,
+        containerColor = cs.surfaceVariant,
+        titleContentColor = cs.onSurface,
+        textContentColor = cs.onSurface,
         title = { Text(stringResource(R.string.save_as_preset)) },
         text = {
             OutlinedTextField(
@@ -627,12 +478,12 @@ private fun SavePresetDialog(
                 onClick = { if (name.isNotBlank()) onConfirm(name.trim()) },
                 enabled = name.isNotBlank(),
             ) {
-                Text(stringResource(R.string.save), color = zen.accent)
+                Text(stringResource(R.string.save), color = cs.primary)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel), color = zen.foregroundMuted)
+                Text(stringResource(R.string.cancel), color = cs.onSurfaceVariant)
             }
         },
     )
@@ -654,7 +505,7 @@ private fun DurationPicker(
     onDurationChanged: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val zen = LocalZen.current
+    val cs = MaterialTheme.colorScheme
     val initialMinutes = (totalMillis / 60_000L).toInt().coerceIn(0, 99)
     val initialSeconds = ((totalMillis % 60_000L) / 1_000L).toInt().coerceIn(0, 59)
 
@@ -690,14 +541,14 @@ private fun DurationPicker(
             Text(
                 text = stringResource(R.string.unit_min),
                 style = MaterialTheme.typography.labelMedium,
-                color = zen.foregroundMuted,
+                color = cs.onSurfaceVariant,
             )
         }
         Text(
             text = ":",
             fontSize = 44.sp,
             fontWeight = FontWeight.Bold,
-            color = zen.accent,
+            color = cs.primary,
             modifier = Modifier.padding(horizontal = 16.dp),
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -711,7 +562,7 @@ private fun DurationPicker(
             Text(
                 text = stringResource(R.string.unit_sec),
                 style = MaterialTheme.typography.labelMedium,
-                color = zen.foregroundMuted,
+                color = cs.onSurfaceVariant,
             )
         }
     }
@@ -728,7 +579,7 @@ private fun WheelNumberPicker(
     onSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val zen = LocalZen.current
+    val cs = MaterialTheme.colorScheme
     val items = remember(range) { range.map { "%02d".format(it) } }
     val itemHeight = 64.dp
     val listState = rememberLazyListState(
@@ -757,7 +608,7 @@ private fun WheelNumberPicker(
                 .fillMaxWidth()
                 .height(itemHeight)
                 .clip(RoundedCornerShape(12.dp))
-                .background(zen.accentSubtle),
+                .background(cs.primaryContainer),
         )
 
         androidx.compose.foundation.lazy.LazyColumn(
@@ -783,7 +634,7 @@ private fun WheelNumberPicker(
                         fontSize = if (isSelected) 40.sp else 26.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                         fontFamily = FontFamily.Monospace,
-                        color = if (isSelected) zen.accent else zen.foregroundSubtle,
+                        color = if (isSelected) cs.primary else cs.onSurfaceVariant,
                     )
                 }
             }
@@ -796,7 +647,7 @@ private fun WheelNumberPicker(
                 .height(itemHeight)
                 .align(Alignment.TopCenter)
                 .background(
-                    Brush.verticalGradient(listOf(zen.background, zen.background.copy(alpha = 0f))),
+                    Brush.verticalGradient(listOf(cs.background, cs.background.copy(alpha = 0f))),
                 ),
         )
         // Fade bottom
@@ -806,7 +657,7 @@ private fun WheelNumberPicker(
                 .height(itemHeight)
                 .align(Alignment.BottomCenter)
                 .background(
-                    Brush.verticalGradient(listOf(zen.background.copy(alpha = 0f), zen.background)),
+                    Brush.verticalGradient(listOf(cs.background.copy(alpha = 0f), cs.background)),
                 ),
         )
     }
@@ -816,10 +667,10 @@ private fun WheelNumberPicker(
 // Previews
 // ---------------------------------------------------------------------------
 
-@Preview(showBackground = true, name = "Picker — Indigo (default)")
+@Preview(showBackground = true, name = "Idle — picker")
 @Composable
-private fun PreviewPickerIndigo() {
-    Timer99Theme(palette = Palette.INDIGO) {
+private fun MainScreenPickerPreview() {
+    Timer99Theme {
         MainScreen(
             state = TimerState.initial(300_000L),
             presets = listOf(
@@ -827,55 +678,37 @@ private fun PreviewPickerIndigo() {
                 Preset(id = 2, name = "Gym rest", durationSeconds = 90),
                 Preset(id = 3, name = "Break", durationSeconds = 900),
             ),
-            selectedPalette = Palette.INDIGO,
             onStart = {}, onPause = {}, onAddMinute = {}, onSubtractMinute = {}, onReset = {},
             onSetDuration = {}, onLoadPreset = {}, onSavePreset = { _, _ -> },
-            onDeletePreset = {}, onPickAlarmSound = {}, onSelectPalette = {},
+            onDeletePreset = {}, onPickAlarmSound = {},
         )
     }
 }
 
-@Preview(showBackground = true, name = "Picker — Emerald")
+@Preview(showBackground = true, name = "Running")
 @Composable
-private fun PreviewPickerEmerald() {
-    Timer99Theme(palette = Palette.EMERALD) {
-        MainScreen(
-            state = TimerState.initial(300_000L),
-            presets = listOf(Preset(id = 1, name = "Morning run", durationSeconds = 1200)),
-            selectedPalette = Palette.EMERALD,
-            onStart = {}, onPause = {}, onAddMinute = {}, onSubtractMinute = {}, onReset = {},
-            onSetDuration = {}, onLoadPreset = {}, onSavePreset = { _, _ -> },
-            onDeletePreset = {}, onPickAlarmSound = {}, onSelectPalette = {},
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Running — Rose")
-@Composable
-private fun PreviewRunningRose() {
-    Timer99Theme(palette = Palette.ROSE) {
+private fun MainScreenRunningPreview() {
+    Timer99Theme {
         MainScreen(
             state = TimerState(remainingMillis = 97_000L, totalMillis = 300_000L, isRunning = true),
             presets = listOf(Preset(id = 1, name = "Pomodoro", durationSeconds = 1500)),
-            selectedPalette = Palette.ROSE,
             onStart = {}, onPause = {}, onAddMinute = {}, onSubtractMinute = {}, onReset = {},
             onSetDuration = {}, onLoadPreset = {}, onSavePreset = { _, _ -> },
-            onDeletePreset = {}, onPickAlarmSound = {}, onSelectPalette = {},
+            onDeletePreset = {}, onPickAlarmSound = {},
         )
     }
 }
 
-@Preview(showBackground = true, name = "Paused — Amber")
+@Preview(showBackground = true, name = "Paused")
 @Composable
-private fun PreviewPausedAmber() {
-    Timer99Theme(palette = Palette.AMBER) {
+private fun MainScreenPausedPreview() {
+    Timer99Theme {
         MainScreen(
             state = TimerState(remainingMillis = 120_000L, totalMillis = 300_000L, isRunning = false),
             presets = emptyList(),
-            selectedPalette = Palette.AMBER,
             onStart = {}, onPause = {}, onAddMinute = {}, onSubtractMinute = {}, onReset = {},
             onSetDuration = {}, onLoadPreset = {}, onSavePreset = { _, _ -> },
-            onDeletePreset = {}, onPickAlarmSound = {}, onSelectPalette = {},
+            onDeletePreset = {}, onPickAlarmSound = {},
         )
     }
 }
