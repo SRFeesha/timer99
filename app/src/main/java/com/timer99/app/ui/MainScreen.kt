@@ -25,13 +25,13 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bookmark
-import androidx.compose.material.icons.filled.FastForward
-import androidx.compose.material.icons.filled.FastRewind
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.rounded.Bookmark
+import androidx.compose.material.icons.rounded.FastForward
+import androidx.compose.material.icons.rounded.FastRewind
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -183,9 +183,9 @@ private fun PickerLayout(
                 ),
             ) {
                 Icon(
-                    imageVector = Icons.Default.PlayArrow,
+                    imageVector = Icons.Rounded.PlayArrow,
                     contentDescription = null,
-                    modifier = Modifier.size(36.dp),
+                    modifier = Modifier.size(40.dp),
                 )
                 Spacer(Modifier.width(10.dp))
                 Text(
@@ -223,9 +223,10 @@ private fun PickerLayout(
                 .padding(end = HPad, top = 8.dp),
         ) {
             Icon(
-                imageVector = Icons.Default.Settings,
+                imageVector = Icons.Rounded.Settings,
                 contentDescription = "Settings",
                 tint = cs.onSurfaceVariant,
+                modifier = Modifier.size(28.dp),
             )
         }
     }
@@ -243,7 +244,7 @@ private fun PickerLayout(
             ListItem(
                 headlineContent = { Text(stringResource(R.string.save_as_preset)) },
                 leadingContent = {
-                    Icon(Icons.Default.Bookmark, contentDescription = null)
+                    Icon(Icons.Rounded.Bookmark, contentDescription = null, modifier = Modifier.size(26.dp))
                 },
                 modifier = Modifier
                     .clickable(enabled = state.totalMillis > 0) {
@@ -255,7 +256,7 @@ private fun PickerLayout(
             ListItem(
                 headlineContent = { Text(stringResource(R.string.alarm_sound)) },
                 leadingContent = {
-                    Icon(Icons.Default.Notifications, contentDescription = null)
+                    Icon(Icons.Rounded.Notifications, contentDescription = null, modifier = Modifier.size(26.dp))
                 },
                 modifier = Modifier.clickable {
                     showSettingsSheet = false
@@ -311,11 +312,11 @@ private fun RunningLayout(
             TimerControlButton(
                 onClick = if (state.isRunning) onPause else onStart,
                 enabled = !state.isFinished,
-                icon = if (state.isRunning) Icons.Default.Pause else Icons.Default.PlayArrow,
+                icon = if (state.isRunning) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                 label = if (state.isRunning) stringResource(R.string.pause)
                 else stringResource(R.string.resume),
                 fontSize = 20.sp,
-                iconSize = 20.dp,
+                iconSize = 26.dp,
                 height = 64.dp,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -334,14 +335,14 @@ private fun RunningLayout(
                 TimerControlButton(
                     onClick = onSubtractMinute,
                     enabled = state.isRunning,
-                    icon = Icons.Default.FastRewind,
+                    icon = Icons.Rounded.FastRewind,
                     label = "−1m",
                     modifier = Modifier.weight(1f),
                 )
                 TimerControlButton(
                     onClick = onAddMinute,
                     enabled = state.isRunning,
-                    icon = Icons.Default.FastForward,
+                    icon = Icons.Rounded.FastForward,
                     label = "+1m",
                     modifier = Modifier.weight(1f),
                 )
@@ -374,7 +375,7 @@ private fun TimerControlButton(
     label: String,
     modifier: Modifier = Modifier,
     fontSize: androidx.compose.ui.unit.TextUnit = 14.sp,
-    iconSize: androidx.compose.ui.unit.Dp = 16.dp,
+    iconSize: androidx.compose.ui.unit.Dp = 22.dp,
     height: androidx.compose.ui.unit.Dp = 52.dp,
 ) {
     val cs = MaterialTheme.colorScheme
